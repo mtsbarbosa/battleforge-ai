@@ -1,0 +1,1 @@
+["^ ","~:members",["^ ","DEFAULT_HISTOGRAM_BUCKET_BOUNDARIES",["~#set",[["^ ","~:flags",["^2",["~:public","~:static","~:field","~:final"]]]]],"createBoundaryArray",["^2",[["^ ","^3",["^2",["~:method","^4","^5"]]]]],"findBucketIndex",["^2",[["^ ","^3",["^2",["^9","^4","^5"]]]]],"validateBucketBoundaries",["^2",[["^ ","^3",["^2",["^9","^4","^5"]]]]]]]

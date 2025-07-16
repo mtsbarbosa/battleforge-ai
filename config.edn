@@ -1,0 +1,26 @@
+{:simulation {:default-battles 100
+               :timeout-minutes 30
+               :parallel-workers 4
+               :random-seed nil}
+ 
+ :output {:default-format :json
+          :include-detailed-logs false
+          :results-directory "./results"
+          :backup-results? true}
+ 
+ :analysis {:metrics [:win-rate :avg-game-length :turn-count :amber-efficiency]
+            :confidence-interval 0.95
+            :min-games-for-significance 30}
+ 
+ :logging {:level :info
+           :file "./logs/battleforge.log"
+           :console true}
+ 
+ :performance {:memory-limit "2g"
+               :gc-strategy :g1
+               :batch-size 50}
+ 
+ :keyforge {:api-base-url "https://www.keyforgegame.com/api"
+            :rate-limit-ms 1000
+            :cache-decks? true
+            :cache-directory "./cache/decks"}} 
