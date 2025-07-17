@@ -1,1 +1,0 @@
-["^ ","~:members",["^ ","AGGREGATION_TEMPORALITY_UNSPECIFIED",["~#set",[["^ ","~:flags",["^2",["~:public","~:static","~:field","~:final"]]]]],"AGGREGATION_TEMPORALITY_DELTA",["^2",[["^ ","^3",["^2",["^4","^5","^6","^7"]]]]],"AGGREGATION_TEMPORALITY_CUMULATIVE",["^2",[["^ ","^3",["^2",["^4","^5","^6","^7"]]]]],"<init>",["^2",[["^ ","^3",["^2",["~:method","^4"]]]]]]]

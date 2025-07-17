@@ -53,6 +53,23 @@
   "Source where deck was fetched from"
   (s/enum :keyforge-api :decks-of-keyforge :local-file :manual))
 
+(s/defschema SASRating
+  "SAS (SynergyAercsScaling) rating breakdown"
+  {(s/optional-key :sas-rating) (s/maybe s/Num)      ; Overall SAS score
+   (s/optional-key :amber) (s/maybe s/Num)           ; Amber/Aember score
+   (s/optional-key :expected-amber) (s/maybe s/Num)  ; Expected amber per turn
+   (s/optional-key :artifact-control) (s/maybe s/Num)
+   (s/optional-key :creature-control) (s/maybe s/Num)
+   (s/optional-key :efficiency) (s/maybe s/Num)
+   (s/optional-key :recursion) (s/maybe s/Num)
+   (s/optional-key :creature-protection) (s/maybe s/Num)
+   (s/optional-key :disruption) (s/maybe s/Num)
+   (s/optional-key :other) (s/maybe s/Num)
+   (s/optional-key :effective-power) (s/maybe s/Num)
+   (s/optional-key :raw-amber) (s/maybe s/Num)
+   (s/optional-key :synergy-rating) (s/maybe s/Num)
+   (s/optional-key :antisynergy-rating) (s/maybe s/Num)})
+
 (s/defschema Deck
   "Complete deck representation"
   {:id            s/Str
@@ -64,6 +81,7 @@
    :expansion     s/Int
    :source        DeckSource
    :power-level   (s/maybe s/Int)
+   :sas-rating    (s/maybe SASRating)
    :chains        (s/maybe s/Int)
    :wins          (s/maybe s/Int)
    :losses        (s/maybe s/Int)
@@ -179,14 +197,16 @@
   (->> (:cards deck)
        (map :power)
        (filter some?)
-       (reduce +)))
+       (map #(if (number? %) % 0))
+       (reduce + 0)))
 
 (defn calculate-total-amber
   "Calculate total amber in a deck"
   [deck]
   (->> (:cards deck)
        (map :amber)
-       (reduce +)))
+       (map #(if (number? %) % 0))
+       (reduce + 0)))
 
 (defn validate-deck
   "Validate that a deck follows Keyforge rules"

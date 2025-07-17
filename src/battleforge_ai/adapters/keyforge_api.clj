@@ -68,9 +68,18 @@
      :name (:card_title api-card)
      :house (deck/normalize-house-name (:house api-card))
      :card-type (deck/normalize-card-type (:card_type api-card))
-     :amber (or (:aember api-card) 0)
-     :power (:power api-card)
-     :armor (:armor api-card)
+     :amber (or (when-let [aember (:aember api-card)]
+                  (if (string? aember)
+                    (Integer/parseInt aember)
+                    aember)) 0)
+     :power (when-let [power (:power api-card)]
+              (if (string? power)
+                (Integer/parseInt power)
+                power))
+     :armor (when-let [armor (:armor api-card)]
+              (if (string? armor)
+                (Integer/parseInt armor)
+                armor))
      :rarity (deck/normalize-rarity (:rarity api-card))
      :card-text (:card_text api-card)
      :traits (or (:traits api-card) [])
@@ -112,6 +121,7 @@
      :expansion (:expansion deck-data)
      :source :keyforge-api
      :power-level nil
+     :sas-rating nil
      :chains nil
      :wins nil
      :losses nil

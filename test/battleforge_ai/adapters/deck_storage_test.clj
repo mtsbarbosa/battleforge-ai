@@ -3,7 +3,8 @@
             [schema.test :as schema-test]
             [clojure.java.io :as io]
             [java-time :as time]
-            [battleforge-ai.adapters.deck-storage :as storage]
+            [battleforge-ai.adapters.deck-storage :as deck-adapter]
+            [battleforge-ai.diplomat.file-storage :as file-diplomat]
             [battleforge-ai.models.deck :as deck]))
 
 (use-fixtures :once schema-test/validate-schemas)
@@ -32,6 +33,7 @@
    :expansion 341
    :source :keyforge-api
    :power-level nil
+   :sas-rating nil
    :chains nil
    :wins nil
    :losses nil
@@ -50,22 +52,24 @@
 
 (deftest test-safe-filename
   (testing "converts deck names to safe filenames"
-    (is (= "test-deck" (storage/safe-filename "Test Deck")))
-    (is (= "complex-deck-name" (storage/safe-filename "Complex: Deck! Name?")))
-    (is (= "deck-with-spaces" (storage/safe-filename "Deck   with   spaces")))))
+    (is (= "test-deck" (deck-adapter/safe-filename "Test Deck")))
+    (is (= "complex-deck-name" (deck-adapter/safe-filename "Complex: Deck! Name?")))
+    (is (= "deck-with-spaces" (deck-adapter/safe-filename "Deck   with   spaces")))))
 
-(deftest test-ensure-directory
-  (testing "creates directory if it doesn't exist"
-    (let [test-dir "./test-temp-dir"]
-      (storage/ensure-directory test-dir)
-      (is (.exists (io/file test-dir)))
-      (.delete (io/file test-dir)))))
+(deftest test-deck-serialization-adapter
+  (testing "adapter can transform deck to/from JSON"
+    (let [json-map (deck-adapter/deck->json-map sample-deck)
+          restored-deck (deck-adapter/json-map->deck json-map)]
+      
+      (is (= (:name sample-deck) (:name restored-deck)))
+      (is (= (:houses sample-deck) (:houses restored-deck)))
+      (is (= (count (:cards sample-deck)) (count (:cards restored-deck)))))))
 
-(deftest test-deck-serialization
-  (testing "deck can be saved and loaded"
+(deftest test-deck-file-operations
+  (testing "diplomat can save and load deck files"
     (let [temp-dir "./test-decks"
-          file-path (storage/save-deck! sample-deck temp-dir)
-          loaded-deck (storage/load-deck file-path)]
+          file-path (file-diplomat/save-deck! sample-deck temp-dir)
+          loaded-deck (file-diplomat/load-deck file-path)]
       
       (is (.exists (io/file file-path)))
       (is (= (:name sample-deck) (:name loaded-deck)))
@@ -79,10 +83,10 @@
 (deftest test-deck-exists
   (testing "deck existence check works"
     (let [temp-dir "./test-decks"]
-      (is (not (storage/deck-exists? "Test Deck" temp-dir)))
-      (storage/save-deck! sample-deck temp-dir)
-      (is (storage/deck-exists? "Test Deck" temp-dir))
+      (is (not (file-diplomat/deck-exists? "Test Deck" temp-dir)))
+      (file-diplomat/save-deck! sample-deck temp-dir)
+      (is (file-diplomat/deck-exists? "Test Deck" temp-dir))
       
       ; Cleanup
-      (storage/delete-deck! "Test Deck" temp-dir)
+      (file-diplomat/delete-deck! "Test Deck" temp-dir)
       (.delete (io/file temp-dir)))))

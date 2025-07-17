@@ -32,6 +32,7 @@
    :expansion 341
    :source :manual
    :power-level 75
+   :sas-rating nil
    :chains 0
    :wins 5
    :losses 3

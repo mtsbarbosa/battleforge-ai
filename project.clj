@@ -15,7 +15,7 @@
                  [org.clojure/tools.logging "1.2.4"]
                  [ch.qos.logback/logback-classic "1.4.8"]]
   
-  :main ^:skip-aot battleforge-ai.core
+  :main ^:skip-aot battleforge-ai.diplomat.cli
   :target-path "target/%s"
   
   :profiles {:uberjar {:aot :all
@@ -26,7 +26,7 @@
   
   :jvm-opts ["-Xmx2g"]
   
-  :aliases {"battle" ["run" "-m" "battleforge-ai.core"]
-            "simulate" ["run" "-m" "battleforge-ai.simulation.runner"]
-            "stats" ["run" "-m" "battleforge-ai.analysis.stats"]
+  :aliases {"battle" ["run" "-m" "battleforge-ai.diplomat.cli"]
+            "simulate" ["run" "-m" "battleforge-ai.diplomat.cli"]
+            "stats" ["run" "-m" "battleforge-ai.diplomat.cli"]
             "fetch-deck" ["run" "fetch-deck"]}) 

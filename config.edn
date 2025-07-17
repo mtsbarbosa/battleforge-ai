@@ -23,4 +23,10 @@
  :keyforge {:api-base-url "https://www.keyforgegame.com/api"
             :rate-limit-ms 1000
             :cache-decks? true
-            :cache-directory "./cache/decks"}} 
+            :cache-directory "./cache/decks"}
+ 
+ :decks-of-keyforge {:api-base-url "https://decksofkeyforge.com/public-api"
+                     :api-version "v3"
+                     :api-key nil ; Set your DoK API key via DOK_API_KEY environment variable
+                     :rate-limit-ms 1000
+                     :timeout-ms 30000}} 

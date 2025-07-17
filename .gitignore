@@ -1,1 +1,13 @@
 /target
+/decks/*
+notes.md
+
+# Leiningen artifacts
+.lein-failures
+.lein-repl-history
+
+# clj-kondo cache
+.clj-kondo/.cache/
+
+# macOS system files
+.DS_Store

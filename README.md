@@ -45,6 +45,44 @@ lein test
 lein run --help
 ```
 
+## Architecture
+
+BattleForge AI follows the **Diplomat Architecture** pattern with clear layer separation:
+
+```
+┌─────────────────┐
+│  CLI Diplomat   │ ← Command-line interface
+│   (cli.clj)     │ ← Argument parsing, user interaction
+└─────────────────┘
+         │ calls
+┌─────────────────┐
+│   Controllers   │ ← Business logic orchestration
+│   (deck.clj)    │ ← Workflow coordination
+└─────────────────┘
+         │ calls
+┌─────────────────┐
+│   Diplomats     │ ← External I/O operations
+│ (file-storage)  │ ← HTTP, file system, database
+└─────────────────┘
+         │ calls
+┌─────────────────┐
+│   Adapters      │ ← Pure data transformation
+│ (deck-storage)  │ ← Format conversion, validation
+└─────────────────┘
+         │ uses
+┌─────────────────┐
+│   Models        │ ← Domain entities and schemas
+│   (deck.clj)    │
+└─────────────────┘
+```
+
+**Key Principles:**
+- **CLI Diplomat** handles external interface and calls **Controllers**
+- **Controllers** orchestrate business logic and call **Diplomats**
+- **Diplomats** handle all I/O operations and call **Adapters**
+- **Adapters** are pure functions with no side effects
+- **Models** define domain entities with schema validation
+
 ## Quick Start
 
 ### Fetch Decks from Online Sources
@@ -53,10 +91,13 @@ lein run --help
 # Fetch a deck from official Keyforge API by UUID
 lein run fetch-deck --source keyforge 550e8400-e29b-41d4-a716-446655440000
 
-# Fetch from Decks of Keyforge by search
+# For enhanced SAS ratings, set DoK API key first:
+export DOK_API_KEY="your-api-key-here"
+
+# Fetch from Decks of Keyforge by search (with SAS ratings)
 lein run fetch-deck --source search --name "Archimedes the Wise"
 
-# Fetch from Decks of Keyforge by UUID  
+# Fetch from Decks of Keyforge by UUID (with SAS ratings)
 lein run fetch-deck --source dok 550e8400-e29b-41d4-a716-446655440000
 
 # Save to custom directory
@@ -109,11 +150,12 @@ src/
 │   │   ├── stats.clj        # Statistical calculations
 │   │   ├── reporting.clj    # Report generation
 │   │   └── export.clj       # Data export utilities
-│   └── adapters/            # External integrations
-│       ├── keyforge_api.clj     # Official Keyforge API
-│       ├── decks_of_keyforge_api.clj # Decks of Keyforge API
-│       ├── deck_storage.clj     # Local deck file management
-│       └── file_io.clj      # File I/O operations
+│   ├── adapters/            # Data transformation (pure functions)
+│   │   ├── keyforge_api.clj     # Official Keyforge API data transformation
+│   │   ├── decks_of_keyforge_api.clj # Decks of Keyforge API data transformation
+│   │   └── deck_storage.clj     # Deck serialization/deserialization
+│   └── diplomat/            # External I/O operations (calls adapters)
+│       └── file_storage.clj     # File system operations
 ```
 
 ## Usage Examples
@@ -198,7 +240,81 @@ Create a `config.edn` file to customize default behavior:
  :keyforge {:api-base-url "https://www.keyforgegame.com/api"
             :rate-limit-ms 1000
             :cache-decks? true
-            :cache-directory "./cache/decks"}}
+            :cache-directory "./cache/decks"}
+ :decks-of-keyforge {:api-base-url "https://decksofkeyforge.com/public-api"
+                     :api-version "v3"
+                     :api-key nil ; Set your DoK API key here
+                     :rate-limit-ms 1000
+                     :timeout-ms 30000}}
+```
+
+### Decks of Keyforge API v3 Support
+
+BattleForge AI now supports the **new Decks of Keyforge v3 API** which provides enhanced SAS ratings and deck statistics:
+
+#### Getting an API Key
+1. **Contact DoK**: Retrieve it once logged in [here](https://decksofkeyforge.com/about/sellers-and-devs)
+2. **Set Your API Key** (choose one method):
+
+   **Option A: Environment Variable (Recommended for Security)**
+   ```bash
+   # Set environment variable (replace with your actual key)
+   export DOK_API_KEY="your-api-key-here"
+   
+   # For permanent setup, add to your shell profile:
+   echo 'export DOK_API_KEY="your-api-key-here"' >> ~/.bashrc
+   # or for zsh:
+   echo 'export DOK_API_KEY="your-api-key-here"' >> ~/.zshrc
+   ```
+
+   **Option B: Configuration File**
+   ```clojure
+   ;; In config.edn
+   :decks-of-keyforge {:api-key "your-api-key-here"}
+   ```
+   
+   ⚠️ **Security Note**: Environment variables are preferred as they keep API keys out of version control.
+
+#### Benefits with API Key
+- **Complete SAS Ratings**: Access to all SAS components (Amber, Expected Amber, Artifact Control, Creature Control, Efficiency, Recursion, etc.)
+- **AERC Metrics**: Detailed Amber/Expected Amber/Recursion/Creature Control analysis
+- **Enhanced Statistics**: Win/loss records, usage counts, and community data
+- **Better Reliability**: Authenticated access with higher rate limits
+
+#### Fallback Behavior
+Without an API key, the system automatically falls back to:
+- **Official Keyforge API**: Always available but without SAS ratings
+- **Full Compatibility**: All deck fetching still works, just without enhanced metrics
+
+**Example Usage:**
+```bash
+# Set API key via environment variable
+export DOK_API_KEY="your-api-key-here"
+
+# Fetch with SAS ratings (requires API key)
+lein run fetch-deck --source dok 938ded7f-4ea0-4698-b47c-2cdabb44e76c
+
+# Always works - no SAS ratings needed
+lein run fetch-deck --source keyforge 938ded7f-4ea0-4698-b47c-2cdabb44e76c
+```
+
+#### API Key Troubleshooting
+
+**Check if your API key is loaded:**
+```bash
+# Look for this log message when running any DoK command:
+# "Loaded DoK API key from DOK_API_KEY environment variable"
+# or "Loaded DoK API key from configuration file"
+```
+
+**Common issues:**
+- **No API key message**: Set `DOK_API_KEY` environment variable or add to `config.edn`
+- **Authentication errors**: Verify your API key is correct
+- **Still no SAS ratings**: Some decks may not have SAS data calculated yet
+
+**Verify environment variable:**
+```bash
+echo $DOK_API_KEY  # Should show your API key
 ```
 
 ## CLI Options
