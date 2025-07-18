@@ -1,7 +1,9 @@
 (ns battleforge-ai.diplomat.cli
   (:require [clojure.tools.cli :refer [parse-opts]]
             [clojure.string :as str]
-            [battleforge-ai.controllers.deck :as deck-controller])
+            [battleforge-ai.controllers.deck :as deck-controller]
+            [battleforge-ai.controllers.battle :as battle-controller]
+            [battleforge-ai.diplomat.file-storage :as file-storage])
   (:gen-class))
 
 (def cli-options
@@ -92,10 +94,57 @@
 
 (defn execute-battle [args options]
   (println "🗡️  Battle simulation mode")
-  (println "⚠️  This feature is not yet implemented")
-  (println "Args:" args)
-  (println "Options:" options)
-  :executed)
+  (let [deck1-path (:deck1 options)
+        deck2-path (:deck2 options)
+        num-battles (:battles options)
+        output-path (:output options)]
+    
+    (cond
+      (not deck1-path)
+      (do (println "❌ Error: Deck1 path is required (use --deck1)")
+          :validation-error)
+      
+      (not deck2-path)
+      (do (println "❌ Error: Deck2 path is required (use --deck2)")
+          :validation-error)
+      
+      :else
+      (try
+        (println "📡 Loading decks...")
+        
+        ;; Load both decks
+        (let [deck1 (file-storage/load-deck deck1-path)
+              deck2 (file-storage/load-deck deck2-path)]
+          
+          (println "✅ Loaded" (:name deck1) "vs" (:name deck2))
+          (println "🎲 Running" num-battles "battles...")
+          
+          ;; Run battle simulation
+          (let [battle-result (battle-controller/simulate-battle-series!
+                                {:deck1 deck1
+                                 :deck2 deck2
+                                 :num-games num-battles})
+                summary (battle-controller/format-battle-summary battle-result)]
+            
+            ;; Display results
+            (println)
+            (println summary)
+            
+            ;; Save results if output specified
+            (when output-path
+              (println)
+              (println "💾 Saving results to" output-path)
+              ;; TODO: Implement result saving
+              )
+            
+            battle-result))
+        
+        (catch Exception e
+          (println "❌ Error during battle simulation:" (.getMessage e))
+          (when (:verbose options)
+            (println "Stack trace:")
+            (.printStackTrace e))
+          :execution-error)))))
 
 (defn execute-simulate [args options]
   (println "⚔️  Mass simulation mode")

@@ -9,13 +9,14 @@
 (s/defschema Player
   "Player state during a game"
   {:id            s/Str
-   :deck          deck/Deck
+   :deck          [deck/Card]    ; Changed from deck/Deck to list of cards
    :hand          [deck/Card]
    :discard       [deck/Card]
    :purged        [deck/Card]
    :archive       [deck/Card]
    :battleline    [deck/Card]
    :artifacts     [deck/Card]
+   :houses        [deck/House]   ; Added houses from the deck
    :amber         s/Int
    :keys          s/Int
    :chains        s/Int

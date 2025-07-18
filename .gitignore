@@ -2,6 +2,8 @@
 /decks/*
 notes.md
 
+.calva
+
 # Leiningen artifacts
 .lein-failures
 .lein-repl-history

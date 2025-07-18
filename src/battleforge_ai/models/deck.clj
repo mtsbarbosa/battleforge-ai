@@ -47,7 +47,22 @@
    (s/optional-key :maverick-house) House  
    (s/optional-key :anomaly?) s/Bool
    (s/optional-key :anomaly-house) House
-   (s/optional-key :uuid) s/Str})
+   (s/optional-key :uuid) s/Str
+   ;; SAS (Synergy Analysis System) scoring fields
+   (s/optional-key :aerc-score) (s/maybe s/Num)
+   (s/optional-key :expected-amber) (s/maybe s/Num)
+   (s/optional-key :amber-control) (s/maybe s/Num)
+   (s/optional-key :creature-control) (s/maybe s/Num)
+   (s/optional-key :artifact-control) (s/maybe s/Num)
+   (s/optional-key :efficiency) (s/maybe s/Num)
+   (s/optional-key :recursion) (s/maybe s/Num)
+   (s/optional-key :effective-power) (s/maybe s/Num)
+   (s/optional-key :creature-protection) (s/maybe s/Num)
+   (s/optional-key :disruption) (s/maybe s/Num)
+   (s/optional-key :other) (s/maybe s/Num)
+   (s/optional-key :net-synergy) (s/maybe s/Num)
+   (s/optional-key :synergies) (s/maybe [s/Any])
+   (s/optional-key :copies) (s/maybe s/Int)})
 
 (s/defschema DeckSource
   "Source where deck was fetched from"
