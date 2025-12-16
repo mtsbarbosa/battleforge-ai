@@ -10,7 +10,8 @@
 (defn- ensure-directory
   [dir-path]
   (let [dir (io/file dir-path)]
-    (when-not (.exists dir) (.mkdirs dir))
+    (when-not (.exists dir)
+      (.mkdirs dir))
     dir))
 
 (defn- write-json-file!
@@ -40,8 +41,13 @@
   [file-path]
   (let [file (io/file file-path)]
     (if (.exists file)
-      (do (.delete file) (log/info "Deleted file:" file-path) true)
-      (do (log/warn "File not found:" file-path) false))))
+      (do
+        (.delete file)
+        (log/info "Deleted file:" file-path)
+        true)
+      (do
+        (log/warn "File not found:" file-path)
+        false))))
 
 (defn- list-json-files
   "List all JSON files in a directory"
@@ -59,17 +65,17 @@
   [file-path]
   (let [file (io/file file-path)]
     (when (.exists file)
-      {:file-size (.length file), :last-modified (.lastModified file)})))
+      {:file-size (.length file)
+       :last-modified (.lastModified file)})))
 
 ;; ============================================================================
 ;; Public Diplomat API (Called by Controllers)
 ;; ============================================================================
 
-(s/defn save-deck!
-  :-
-  s/Str
+(s/defn save-deck! :- s/Str
   "Save deck to JSON file and return the file path"
-  [deck :- deck/Deck output-dir :- s/Str]
+  [deck :- deck/Deck
+   output-dir :- s/Str]
   (ensure-directory output-dir)
   (let [filename (str (deck-adapter/safe-filename (:name deck)) ".json")
         file-path (str output-dir "/" filename)
@@ -78,9 +84,7 @@
     (log/info "Deck saved successfully:" (:name deck))
     file-path))
 
-(s/defn load-deck
-  :-
-  deck/Deck
+(s/defn load-deck :- deck/Deck
   "Load deck from JSON file"
   [file-path :- s/Str]
   (let [json-data (read-json-file file-path)
@@ -122,14 +126,14 @@
     (mapv (fn [file-path]
             (let [json-data (read-json-file file-path)
                   metadata (get-file-metadata file-path)]
-              (merge {:file-path file-path,
-                      :name (:name json-data),
-                      :uuid (:uuid json-data),
-                      :houses (:houses json-data),
-                      :source (:source json-data),
-                      :expansion (:expansion json-data),
-                      :fetched-at (:fetched-at json-data)}
-                     metadata
-                     {:last-modified (time/instant (:last-modified
-                                                     metadata))})))
-      deck-files)))
+              (merge
+                {:file-path file-path
+                 :name (:name json-data)
+                 :uuid (:uuid json-data)
+                 :houses (:houses json-data)
+                 :source (:source json-data)
+                 :expansion (:expansion json-data)
+                 :fetched-at (:fetched-at json-data)}
+                metadata
+                {:last-modified (time/instant (:last-modified metadata))})))
+          deck-files)))

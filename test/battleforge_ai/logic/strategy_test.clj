@@ -132,16 +132,13 @@
   (testing "calculate-hand-amber-potential sums correctly"
     (let [brobnar-card-1 (create-test-card "B1" :brobnar :action 2 1.5)
           brobnar-card-2 (create-test-card "B2" :brobnar :creature 1 nil) ; fallback
-                                                                          ; to
-                                                                          ; amber
-                                                                          ; value
+          ; to amber value
           dis-card (create-test-card "D1" :dis :action 1 2.0)
           hand [brobnar-card-1 brobnar-card-2 dis-card]]
       ;; Should sum expected-amber or fallback to amber value for brobnar
       ;; cards
       (is (= 2.5 (strategy/calculate-hand-amber-potential hand :brobnar))) ; 1.5
-                                                                           ; +
-                                                                           ; 1.0
+      ; + 1.0
       (is (= 2.0 (strategy/calculate-hand-amber-potential hand :dis)))
       (is (= 0.0 (strategy/calculate-hand-amber-potential hand :logos))))))
 
@@ -192,10 +189,7 @@
           ;; Exception (a): High hand potential with multiple cards
           hand-high-potential [(create-test-card "D1" :dis :action 1 2.0)
                                (create-test-card "D2" :dis :action 1 2.0)] ; 4.0
-                                                                           ; total
-                                                                           ; >
-                                                                           ; 1.0
-                                                                           ; battleline
+          ; total > 1.0 battleline
           player-a (create-test-player "test-a"
                                        [:brobnar :dis :logos]
                                        hand-high-potential
@@ -205,13 +199,9 @@
           hand-many-dis [(create-test-card "D1" :dis :action 1 1.0)
                          (create-test-card "D2" :dis :action 1 1.0)
                          (create-test-card "D3" :dis :action 1 1.0)] ; 3 cards,
-                                                                     ; no
-                                                                     ; brobnar
+          ; no brobnar
           battleline-low [(create-test-card "B1" :brobnar :creature 0 2.0)] ; delta
-                                                                            ; =
-                                                                            ; 2.0
-                                                                            ; ≤
-                                                                            ; 3
+          ; = 2.0 ≤ 3
           player-b (create-test-player "test-b"
                                        [:brobnar :dis :logos]
                                        hand-many-dis
@@ -261,9 +251,7 @@
       ;; (battleline advantage)
       (let [hand-advantage [(create-test-card "D1" :dis :action 1 3.0)
                             (create-test-card "D2" :dis :action 1 3.0)] ; 6.0
-                                                                        ; total
-                                                                        ; > 3.0
-                                                                        ; battleline
+            ; total > 3.0 battleline
             switch-player (create-test-player "switch"
                                               [:brobnar :dis :logos]
                                               hand-advantage
@@ -311,8 +299,7 @@
               [(create-test-card "creature1" :brobnar :creature 0 2.0)
                (create-test-card "creature2" :brobnar :creature 0 1.5)
                (create-test-card "creature3" :dis :creature 0 1.0)]) ; current
-                                                                     ; delta =
-                                                                     ; 2.5
+          ; delta = 2.5
           ;; Low relative threat (opponent weaker than us)
           low-threat-opponent
             (create-test-player
@@ -320,11 +307,7 @@
               [:mars :shadows :logos]
               []
               [(create-test-card "enemy1" :mars :creature 0 1.0)]) ; opponent
-                                                                   ; delta =
-                                                                   ; 1.0,
-                                                                   ; threat =
-                                                                   ; 1.0 - 2.5
-                                                                   ; = -1.5
+          ; delta = 1.0, threat = 1.0 - 2.5 = -1.5
           ;; High relative threat (opponent much stronger)
           high-threat-opponent
             (create-test-player
@@ -334,11 +317,7 @@
               [(create-test-card "enemy1" :mars :creature 0 3.0)
                (create-test-card "enemy2" :mars :creature 0 3.0)
                (create-test-card "enemy3" :mars :creature 0 1.0)]) ; opponent
-                                                                   ; delta =
-                                                                   ; 6.0,
-                                                                   ; threat =
-                                                                   ; 6.0 - 2.5
-                                                                   ; = 3.5
+          ; delta = 6.0, threat = 6.0 - 2.5 = 3.5
          ]
       ;; Against low threat: should stick with advantage (we're stronger)
       (is (= true
@@ -362,12 +341,9 @@
               [(create-test-card "hand1" :dis :action 2 2.0)
                (create-test-card "hand2" :dis :action 1 1.5)
                (create-test-card "hand3" :dis :creature 0 1.0)] ; dis hand
-                                                                ; potential =
-                                                                ; 4.5
+              ; potential = 4.5
               [(create-test-card "creature1" :brobnar :creature 0 1.0)]) ; current
-                                                                         ; delta
-                                                                         ; =
-                                                                         ; 1.0
+          ; delta = 1.0
           ;; Low relative threat opponent (we have advantage)
           low-threat-opponent
             (create-test-player
@@ -375,11 +351,7 @@
               [:mars :shadows :logos]
               []
               [(create-test-card "enemy1" :mars :creature 0 0.5)]) ; opponent
-                                                                   ; delta =
-                                                                   ; 0.5,
-                                                                   ; threat =
-                                                                   ; 0.5 - 1.0
-                                                                   ; = -0.5
+          ; delta = 0.5, threat = 0.5 - 1.0 = -0.5
           ;; High relative threat opponent
           high-threat-opponent
             (create-test-player
@@ -388,11 +360,7 @@
               []
               [(create-test-card "enemy1" :mars :creature 0 3.0)
                (create-test-card "enemy2" :mars :creature 0 2.0)]) ; opponent
-                                                                   ; delta =
-                                                                   ; 5.0,
-                                                                   ; threat =
-                                                                   ; 5.0 - 1.0
-                                                                   ; = 4.0
+          ; delta = 5.0, threat = 5.0 - 1.0 = 4.0
          ]
       ;; Against low threat: should switch easily (normal threshold 1.0x)
       (let [[should-switch? house] (strategy/should-switch-for-hand-advantage?
@@ -416,20 +384,16 @@
               "player1"
               [:brobnar :dis :sanctum]
               [(create-test-card "hand1" :dis :action 1 1.0) ; dis has
-                                                             ; moderate
-                                                             ; potential
-                                                             ; (1.0)
+               ; moderate potential
+               ; (1.0)
                (create-test-card "hand2" :sanctum :creature 0 1.0) ; sanctum
-                                                                   ; has more
-                                                                   ; cards
+               ; has more cards
                (create-test-card "hand3" :sanctum :action 0 1.0)
                (create-test-card "hand4" :sanctum :artifact 0 1.0)
                (create-test-card "hand5" :brobnar :action 1 1.0)]  ; brobnar
-                                                                   ; has least
+              ; has least
               [(create-test-card "my-creature" :brobnar :creature 0 1.0)]) ; current
-                                                                           ; delta
-                                                                           ; =
-                                                                           ; 1.0
+          ; delta = 1.0
           ;; Low relative threat opponent (we have advantage)
           low-threat-opponent
             (create-test-player
@@ -437,11 +401,7 @@
               [:mars :shadows :logos]
               []
               [(create-test-card "enemy1" :mars :creature 0 0.5)]) ; opponent
-                                                                   ; delta =
-                                                                   ; 0.5,
-                                                                   ; threat =
-                                                                   ; 0.5 - 1.0
-                                                                   ; = -0.5
+          ; delta = 0.5, threat = 0.5 - 1.0 = -0.5
           ;; High relative threat opponent (threat > 3.0)
           high-threat-opponent
             (create-test-player
@@ -450,11 +410,7 @@
               []
               [(create-test-card "enemy1" :mars :creature 0 2.5)
                (create-test-card "enemy2" :mars :creature 0 2.0)]) ; opponent
-                                                                   ; delta =
-                                                                   ; 4.5,
-                                                                   ; threat =
-                                                                   ; 4.5 - 1.0
-                                                                   ; = 3.5
+          ; delta = 4.5, threat = 4.5 - 1.0 = 3.5
          ]
       ;; Against low threat: should stick with battleline advantage
       ;; (brobnar has creatures on board)
@@ -479,9 +435,7 @@
               [:brobnar :dis :sanctum]
               [(create-test-card "hand1" :dis :action 1 1.5)]
               [(create-test-card "creature1" :brobnar :creature 0 2.0)]) ; current
-                                                                         ; delta
-                                                                         ; =
-                                                                         ; 2.0
+          ; delta = 2.0
           no-threat (create-test-player
                       "opponent"
                       [:mars :shadows :logos]
@@ -591,10 +545,9 @@
               [:brobnar :dis :sanctum]
               [(create-test-card "steal1" :dis :action 2 1.0) ; dis = 1.0
                (create-test-card "steal2" :dis :action 1 1.0) ; dis = 2.0
-                                                              ; total
+               ; total
                (create-test-card "sanctum-artifact" :sanctum :artifact 0 1.0)] ; sanctum
-                                                                               ; =
-                                                                               ; 0.5
+              ; = 0.5
               [])]
       ;; Should choose dis (2.0 control) over sanctum (0.5) over brobnar
       ;; (0.0)
@@ -646,7 +599,7 @@
               "player"
               [:brobnar :dis :sanctum]
               [(create-test-card "steal" :dis :action 2 1.0) ; dis has amber
-                                                             ; control
+               ; control
                (create-test-card "creature" :brobnar :creature 0 2.0)
                (create-test-card "card" :sanctum :action 1 1.0)]
               [])
@@ -823,7 +776,7 @@
             (create-test-player "player" [:brobnar :dis :logos] [] my-creatures)
           opponent
             (create-test-player "opponent" [:mars :shadows :sanctum] [] [])] ; no
-                                                                             ; creatures
+      ; creatures
       (is (= :reap
              (strategy/should-fight-or-reap? current-player
                                              opponent
@@ -833,8 +786,7 @@
   (testing
     "returns reap (no-op) when we have no creatures of active house to use"
     (let [my-creatures [(create-creature-card "dis-creature" :dis 3)] ; only
-                                                                      ; dis
-                                                                      ; creatures
+          ; dis creatures
           current-player
             (create-test-player "player" [:brobnar :dis :logos] [] my-creatures)
           enemy-creatures [(create-creature-card "enemy" :mars 4)]
@@ -843,8 +795,8 @@
                                        []
                                        enemy-creatures)]
       ;; Active house is brobnar but we only have dis creatures on
-      ;; battleline
-      ;; Can't fight OR reap - returns :reap as a safe no-op (reap with 0
+      ;; battleline Can't fight OR reap - returns :reap as a safe no-op
+      ;; (reap with 0
       ;; creatures = 0 amber)
       (is (= :reap
              (strategy/should-fight-or-reap? current-player
@@ -876,9 +828,9 @@
                                                  []
                                                  my-creatures)
                              (assoc :amber 4)) ; 4 amber = only 2 away from
-                                               ; key
+          ; key
           enemy-creatures [(create-creature-card "enemy" :mars 2)] ; weak
-                                                                   ; enemy
+          ; enemy
           opponent (create-test-player "opponent"
                                        [:mars :shadows :sanctum]
                                        []

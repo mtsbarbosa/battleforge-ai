@@ -169,9 +169,9 @@
     (let [player (create-test-player [] 0)
           step1 (amber-pips/resolve-amber-pips player high-amber-card) ; +3 = 3
           step2 (amber-pips/resolve-amber-pips step1 medium-amber-card) ; +2 =
-                                                                        ; 5
+          ; 5
           step3 (amber-pips/resolve-amber-pips step2 low-amber-card)]   ; +1 =
-                                                                        ; 6
+      ; 6
       (is (= 3 (:amber step1)))
       (is (= 5 (:amber step2)))
       (is (= 6 (:amber step3))))))

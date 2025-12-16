@@ -493,8 +493,7 @@
                   :chains 0,
                   :ready-amber 0}
           result (game-state/shuffle-deck-with-hand player 5)] ; Mulligan: 6
-                                                               ; cards become
-                                                               ; 5
+      ; cards become 5
       (is (= 5 (count (:hand result))))
       (is (= 31 (count (:deck result))))
       ;; Total cards preserved

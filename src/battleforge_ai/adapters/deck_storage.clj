@@ -60,15 +60,15 @@
       (update :usage-count #(or % 0))
       (update :verified? #(or % false))
       (update :identity #(or % (:name json-map))) ; Use name as identity if
-                                                  ; missing
+      ; missing
       (update :uuid #(or % (str (java.util.UUID/randomUUID)))) ; Generate UUID
-                                                               ; if missing
+      ; if missing
       ;; Convert fields to proper types
       (update :houses #(mapv keyword %))
       (update :source #(if % (keyword %) :manual)) ; Default to :manual if
-                                                   ; nil
+      ; nil
       (update :expansion #(if (string? %) 1 %)) ; Convert string to number,
-                                                ; default to 1
+      ; default to 1
       (update
         :cards
         (fn [cards]

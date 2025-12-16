@@ -61,7 +61,7 @@
       (let [result (simple-battle/play-card-simple player creature-card)]
         (is (= [action-card] (:hand result))) ; creature removed from hand
         (is (= [creature-card] (:battleline result))) ; creature added to
-                                                      ; battleline
+        ; battleline
         (is (empty? (:discard result))) ; nothing in discard
         (is (= 1 (:amber result)))) ; amber gained
       ;; Playing an action should move it to discard

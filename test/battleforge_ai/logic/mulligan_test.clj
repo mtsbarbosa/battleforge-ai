@@ -282,8 +282,7 @@
       (is (true? (mulligan/has-bad-house-distribution? bad-hand))))
     ;; Good distribution (3/2/1)
     (let [good-hand [high-amber-card medium-amber-card low-amber-card ; 3
-                                                                      ; different
-                                                                      ; houses
+                     ; different houses
                      high-amber-card medium-amber-card                ; +2 more
                      high-amber-card]]                                ; +1 more
       (is (false? (mulligan/has-bad-house-distribution? good-hand))))
@@ -294,33 +293,29 @@
 (deftest test-creature-control-detection
   (testing "has-creature-control? detects high creature control via SAS metrics"
     (is (true? (mulligan/has-creature-control? board-wipe-card))) ; creature-control
-                                                                  ; = 4
+    ; = 4
     (is (false? (mulligan/has-creature-control? high-amber-card))) ; creature-control
-                                                                   ; = 0
+    ; = 0
     (is (false? (mulligan/has-creature-control? amber-control-card)))))  ; creature-control = 0
 
 (deftest test-amber-control-detection
   (testing "has-amber-control? detects high amber control via SAS metrics"
     (is (true? (mulligan/has-amber-control? amber-control-card))) ; amber-control
-                                                                  ; = 3
+    ; = 3
     (is (false? (mulligan/has-amber-control? board-wipe-card)))   ; amber-control
-                                                                  ; = 0
+    ; = 0
     (is (false? (mulligan/has-amber-control? high-amber-card)))))   ; amber-control = 0
 
 (deftest test-early-game-useless-cards
   (testing "is-early-game-useless? identifies problematic early cards"
     (is (true? (mulligan/is-early-game-useless? board-wipe-card)))    ; has
-                                                                      ; creature-control
-                                                                      ; > 2
+    ; creature-control > 2
     (is (true? (mulligan/is-early-game-useless? amber-control-card))) ; has
-                                                                      ; amber-control
-                                                                      ; > 1
+    ; amber-control > 1
     (is (false? (mulligan/is-early-game-useless? high-amber-card)))   ; both
-                                                                      ; controls
-                                                                      ; = 0
+    ; controls = 0
     (is (false? (mulligan/is-early-game-useless? medium-amber-card))) ; both
-                                                                      ; controls
-                                                                      ; = 0
+    ; controls = 0
     ;; Test edge cases
     (let [edge-creature-control {:id "edge-creature",
                                  :name "Edge Creature",
@@ -338,7 +333,7 @@
                                  :image nil,
                                  :creature-control 2,
                                  :amber-control 0} ; exactly 2, should be
-                                                   ; false
+          ; false
           edge-amber-control {:id "edge-amber",
                               :name "Edge Amber",
                               :house :shadows,
@@ -355,7 +350,7 @@
                               :image nil,
                               :creature-control 0,
                               :amber-control 1}] ; exactly 1, should be
-                                                 ; false
+      ; false
       (is (false? (mulligan/is-early-game-useless? edge-creature-control)))
       (is (false? (mulligan/is-early-game-useless? edge-amber-control))))))
 
@@ -370,9 +365,9 @@
 (deftest test-should-mulligan-too-many-useless-cards
   (testing "should-mulligan? flags hands with too many early-game useless cards"
     (let [too-many-useless [board-wipe-card amber-control-card board-wipe-card ; 3
-                                                                               ; useless
+                            ; useless
                             high-amber-card medium-amber-card low-amber-card]  ; 3
-                                                                               ; good
+          ; good
           player (create-test-player too-many-useless [])]
       (is (true? (mulligan/should-mulligan? player))))))
 
