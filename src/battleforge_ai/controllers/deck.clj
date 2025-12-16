@@ -1,8 +1,8 @@
 (ns battleforge-ai.controllers.deck
   (:require [clojure.string :as str]
             [clojure.tools.logging :as log]
-            [battleforge-ai.adapters.keyforge-api :as keyforge-api]
-            [battleforge-ai.adapters.decks-of-keyforge-api :as dok-api]
+            [battleforge-ai.diplomat.http-out.keyforge-api :as keyforge-diplomat]
+            [battleforge-ai.diplomat.http-out.decks-of-keyforge-api :as dok-diplomat]
             [battleforge-ai.diplomat.file-storage :as file-diplomat]))
 
 (defn validate-fetch-deck-params!
@@ -31,17 +31,13 @@
   
   (case source
     "keyforge"
-    (do
-      (when-not (keyforge-api/validate-deck-uuid deck-id)
-        (throw (ex-info "Invalid Keyforge UUID format" 
-                        {:uuid deck-id :type :validation-error})))
-      (keyforge-api/fetch-deck deck-id))
+    (keyforge-diplomat/fetch-deck! deck-id)
     
     "dok"
-    (dok-api/fetch-deck deck-id)
-    
+    (dok-diplomat/fetch-deck! deck-id)
+
     "search"
-    (dok-api/search-and-fetch-first deck-name)
+    (dok-diplomat/search-and-fetch-first! deck-name)
     
     (throw (ex-info "Invalid source" 
                     {:source source :type :validation-error}))))

@@ -55,9 +55,9 @@
   (let [dir (io/file dir-path)]
     (if (.exists dir)
       (->> (.listFiles dir)
-           (filter #(.isFile %))
-           (filter #(.endsWith (.getName %) ".json"))
-           (mapv #(.getPath %)))
+           (filter #(.isFile ^java.io.File %))
+           (filter #(.endsWith (.getName ^java.io.File %) ".json"))
+           (mapv #(.getPath ^java.io.File %)))
       [])))
 
 (defn- get-file-metadata

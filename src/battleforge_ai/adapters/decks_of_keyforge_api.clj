@@ -1,111 +1,31 @@
 (ns battleforge-ai.adapters.decks-of-keyforge-api
-  (:require [clj-http.client :as http]
-            [clojure.string :as str]
+  (:require [clojure.string :as str]
             [clojure.tools.logging :as log]
-            [clojure.edn :as edn]
-            [clojure.java.io :as io]
             [schema.core :as s]
             [battleforge-ai.models.deck :as deck]
             [java-time.api :as time]))
-
-;; ============================================================================
-;; API Configuration  
-;; ============================================================================
-
-(def ^:private api-base-url "https://decksofkeyforge.com/public-api")
-(def ^:private api-version "v3")
-(def ^:private request-timeout 30000) ; 30 seconds
-(def ^:private rate-limit-delay 1000) ; 1 second between requests
-
-;; API key management
-(def ^:private ^:dynamic *api-key* nil)
-
-(defn set-api-key!
-  "Set the DoK API key"
-  [key]
-  (alter-var-root #'*api-key* (constantly key))
-  (log/info "DoK API key configured"))
-
-(defn get-api-key
-  "Get current API key"
-  []
-  *api-key*)
-
-(defn load-config-api-key!
-  "Load API key from environment variable or config.edn file"
-  ([]
-   (load-config-api-key! "config.edn"))
-  ([config-path]
-   (try
-     ;; First try environment variable
-     (if-let [env-key (System/getenv "DOK_API_KEY")]
-       (do
-         (set-api-key! env-key)
-         (log/info "Loaded DoK API key from DOK_API_KEY environment variable"))
-       ;; Fall back to config file
-       (when (.exists (io/file config-path))
-         (let [config (edn/read-string (slurp config-path))
-               api-key (get-in config [:decks-of-keyforge :api-key])]
-           (when api-key
-             (set-api-key! api-key)
-             (log/info "Loaded DoK API key from configuration file")))))
-     (catch Exception e
-       (log/warn "Could not load configuration from" config-path ":" (.getMessage e))))))
-
-;; Initialize API key from config on namespace load
-(load-config-api-key!)
-
-;; ============================================================================
-;; HTTP Utilities
-;; ============================================================================
-
-(defn- make-request
-  "Make HTTP request with error handling and rate limiting"
-  [url options]
-  (Thread/sleep rate-limit-delay) ; Simple rate limiting
-  (try
-    (let [api-key (get-api-key)
-          headers (cond-> {:accept "application/json"}
-                    api-key (assoc "Api-Key" api-key))]
-      (log/debug "Making DoK API request to:" url)
-      (if api-key
-        (log/debug "Using API key:" (str (subs api-key 0 8) "..."))
-        (log/debug "No API key configured"))
-      (let [response (http/get url (merge {:timeout request-timeout
-                                           :headers headers
-                                           :as :json} 
-                                          options))]
-        (:body response)))
-    (catch Exception e
-      (log/error e "Failed to make request to" url)
-      (throw (ex-info "API request failed" 
-                      {:url url :error (.getMessage e)})))))
-
-;; ============================================================================
-;; Card Transformation
-;; ============================================================================
 
 (defn- parse-keywords
   "Extract keywords from card text"
   [card-text]
   (if (nil? card-text)
     []
-    (let [valid-keywords #{:elusive :skirmish :taunt :deploy :alpha :omega 
+    (let [valid-keywords #{:elusive :skirmish :taunt :deploy :alpha :omega
                            :hazardous :assault :poison :splash-attack}
           lines (str/split card-text #"[\r\n]")
           potential-keywords (mapcat #(str/split % #"\.") lines)
-          normalized-keywords (map #(-> % 
-                                        str/lower-case 
+          normalized-keywords (map #(-> %
+                                        str/lower-case
                                         str/trim
                                         (str/replace #"\s+" "-")
-                                        keyword) 
+                                        keyword)
                                    potential-keywords)]
       (->> normalized-keywords
            (filter valid-keywords)
            (into [])))))
 
-(defn- transform-dok-card
-  "Transform Decks of Keyforge API card to our internal format"
+(defn- api-card->card
+  "Transform Decks of Keyforge API card to internal card format"
   [api-card house sas-data]
   (let [card-id (-> (:cardTitle api-card)
                     str/lower-case
@@ -136,7 +56,6 @@
      :anomaly? (:anomaly api-card)
      :anomaly-house (when (:anomaly api-card)
                       (deck/normalize-house-name house))
-     ;; Enhancement data from bonuses
      :enhancements (when enhanced?
                      (cond-> []
                        (> (or (:bonusAember api-card) 0) 0) (conj {:type :amber :value (:bonusAember api-card)})
@@ -144,7 +63,6 @@
                        (> (or (:bonusDamage api-card) 0) 0) (conj {:type :damage :value (:bonusDamage api-card)})
                        (> (or (:bonusDraw api-card) 0) 0) (conj {:type :draw :value (:bonusDraw api-card)})
                        (> (or (:bonusDiscard api-card) 0) 0) (conj {:type :discard :value (:bonusDiscard api-card)})))
-     ;; SAS scoring fields from synergyDetails
      :aerc-score (:aercScore sas-data)
      :expected-amber (:expectedAmber sas-data)
      :amber-control (:amberControl sas-data)
@@ -160,70 +78,12 @@
      :synergies (:synergies sas-data)
      :copies (:copies sas-data)}))
 
-;; ============================================================================
-;; Deck Fetching (v3 API)
-;; ============================================================================
-
-(defn fetch-deck-v3
-  "Fetch a deck using the v3 API with SAS ratings"
-  [deck-uuid]
-  (log/info "Fetching deck from DoK v3 API:" deck-uuid)
-  (let [url (str api-base-url "/" api-version "/decks/" deck-uuid)]
-    (if (get-api-key)
-      (do
-        (log/debug "Using authenticated DoK v3 API")
-        (make-request url {}))
-      (do
-        (log/warn "No DoK API key configured - v3 API requires authentication")
-        (throw (ex-info "DoK API key required for v3 API" 
-                        {:deck-uuid deck-uuid}))))))
-
-;; ============================================================================
-;; Legacy Deck Search and Fetching (DEPRECATED - old API structure)
-;; ============================================================================
-
-(defn search-decks
-  "Search for decks by name or other criteria (DEPRECATED - uses old API)"
-  [query & {:keys [page page-size] :or {page 1 page-size 20}}]
-  (log/warn "Using deprecated search API - will likely fail")
-  (log/info "Searching decks on Decks of Keyforge:" query)
-  (let [url "https://decksofkeyforge.com/api/decks"
-        response (make-request url {:query-params {:search query
-                                                   :page page
-                                                   :page_size page-size}})]
-    (log/debug "Found" (count (:data response)) "decks for query:" query)
-    (:data response)))
-
-(defn fetch-deck-by-keyforge-id
-  "Fetch a deck from Decks of Keyforge API using Keyforge UUID (DEPRECATED - uses old API)"
-  [keyforge-id]
-  (log/warn "Using deprecated DoK API - will likely fail. Consider using v3 API with API key.")
-  (log/info "Fetching deck from Decks of Keyforge by Keyforge ID:" keyforge-id)
-  (let [url (str "https://decksofkeyforge.com/api/decks/" keyforge-id)
-        response (make-request url {})]
-    (log/debug "Received deck response for Keyforge ID" keyforge-id)
-    response))
-
-(defn fetch-deck-by-dok-id
-  "Fetch a deck from Decks of Keyforge API using their internal ID (DEPRECATED - uses old API)"
-  [dok-id]
-  (log/warn "Using deprecated DoK API - will likely fail. Consider using v3 API with API key.")
-  (log/info "Fetching deck from Decks of Keyforge by DoK ID:" dok-id)
-  (let [url (str "https://decksofkeyforge.com/api/decks/" dok-id)
-        response (make-request url {})]
-    (log/debug "Received deck response for DoK ID" dok-id)
-    response))
-
-;; ============================================================================
-;; Deck Transformation
-;; ============================================================================
-
-(defn- transform-dok-deck
-  "Transform Decks of Keyforge API deck response to our internal format"
+(s/defn legacy-response->deck :- deck/Deck
+  "Transform legacy Decks of Keyforge API response to internal deck format"
   [api-response]
   (let [deck-data api-response
-        cards (map (fn [card] 
-                     (transform-dok-card card (:house card) {})) 
+        cards (map (fn [card]
+                     (api-card->card card (:house card) {}))
                    (:cards deck-data))
         houses (mapv deck/normalize-house-name (:houses deck-data))]
     {:id (str (:id deck-data))
@@ -274,26 +134,22 @@
      :artifact-count (deck/count-by-type {:cards cards} :artifact)
      :upgrade-count (deck/count-by-type {:cards cards} :upgrade)}))
 
-;; ============================================================================
-;; Public API
-;; ============================================================================
-
-(defn- transform-dok-v3-deck
-  "Transform v3 API deck response to our internal format"
-  [api-response deck-uuid]
+(s/defn v3-response->deck :- deck/Deck
+  "Transform v3 API response to internal deck format"
+  [api-response deck-uuid :- s/Str]
   (log/debug "DoK v3 API response keys:" (keys api-response))
   (let [deck-data (:deck api-response)
         sas-version (:sasVersion api-response)
         deck-name (or (:name deck-data) (:deck_name deck-data) "Unknown Deck")
         houses-and-cards (:housesAndCards deck-data)
         synergy-details (:synergyDetails deck-data)
-        
+
         sas-lookup (reduce (fn [acc sas-entry]
                              (let [card-name (:cardName sas-entry)]
                                (assoc acc card-name sas-entry)))
                            {}
                            synergy-details)
-        
+
         cards (mapcat (fn [{:keys [house cards]}]
                         (map (fn [card]
                                (let [card-title (:cardTitle card)
@@ -304,17 +160,17 @@
                                      sas-data (or (get sas-lookup sas-key)
                                                   (get sas-lookup card-title)
                                                   {})]
-                                 (transform-dok-card card house sas-data)))
+                                 (api-card->card card house sas-data)))
                              cards))
                       houses-and-cards)
         houses (mapv (comp deck/normalize-house-name :house) houses-and-cards)]
-    
+
     (log/debug "Deck data keys:" (keys deck-data))
     (log/debug "SAS version:" sas-version)
     (log/debug "Houses found:" houses)
     (log/debug "Total cards found:" (count cards))
     (log/debug "SAS lookup keys:" (take 10 (keys sas-lookup)))
-    
+
     {:id (str (or (:id deck-data) deck-uuid))
      :name deck-name
      :uuid deck-uuid
@@ -365,67 +221,3 @@
      :action-count (deck/count-by-type {:cards cards} :action)
      :artifact-count (deck/count-by-type {:cards cards} :artifact)
      :upgrade-count (deck/count-by-type {:cards cards} :upgrade)}))
-
-(s/defn fetch-deck :- deck/Deck
-  "Fetch a deck from Decks of Keyforge API - uses v3 API if API key available, falls back to legacy"
-  [deck-id :- s/Str]
-  (if (and (get-api-key) (re-matches #"^[a-fA-F0-9-]{36}$" deck-id))
-    (let [response (fetch-deck-v3 deck-id)]
-      (transform-dok-v3-deck response deck-id))
-    (let [response (if (re-matches #"^[a-fA-F0-9-]{36}$" deck-id)
-                     (fetch-deck-by-keyforge-id deck-id)
-                     (fetch-deck-by-dok-id deck-id))]
-      (transform-dok-deck response))))
-
-(defn test-api-key
-  "Test if the DoK API key is working"
-  []
-  (if (get-api-key)
-    (try
-      (log/info "Testing DoK API key...")
-      (let [test-uuid "938ded7f-4ea0-4698-b47c-2cdabb44e76c"
-            url (str api-base-url "/" api-version "/decks/" test-uuid)]
-        (make-request url {})
-        (log/info "DoK API key is working!")
-        true)
-      (catch Exception e
-        (log/error "DoK API key test failed:" (.getMessage e))
-        false))
-    (do
-      (log/warn "No DoK API key configured")
-      false)))
-
-(defn search-and-fetch-first
-  "Search for decks by name and return the first match (DEPRECATED - uses old API)"
-  [deck-name]
-  (log/warn "search-and-fetch-first uses deprecated API - will likely fail")
-  (log/info "Searching for deck:" deck-name)
-  (let [search-results (search-decks deck-name)
-        first-result (first search-results)]
-    (if first-result
-      (do
-        (log/info "Found deck, fetching details:" (:name first-result))
-        (fetch-deck (str (:id first-result))))
-      (throw (ex-info "No decks found" {:query deck-name})))))
-
-(defn test-v3-transformation 
-  "Test function to verify v3 API transformation with the provided deck UUID"
-  []
-  (let [test-deck-uuid "938ded7f-4ea0-4698-b47c-2cdabb44e76c"]
-    (log/info "Testing v3 API transformation with deck:" test-deck-uuid)
-    (try
-      (let [result (fetch-deck test-deck-uuid)]
-        (log/info "Transformation successful!")
-        (log/info "Deck name:" (:name result))
-        (log/info "Houses:" (:houses result))
-        (log/info "Total cards:" (count (:cards result)))
-        (log/info "Cards with SAS data:" 
-                  (count (filter #(some? (:aerc-score %)) (:cards result))))
-        (log/info "Sample card with SAS data:" 
-                  (-> (filter #(some? (:aerc-score %)) (:cards result))
-                      first
-                      (select-keys [:name :house :aerc-score :creature-control :amber-control])))
-        result)
-      (catch Exception e
-        (log/error "Transformation failed:" (.getMessage e))
-        (throw e)))))

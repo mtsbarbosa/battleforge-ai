@@ -45,8 +45,8 @@
                            (assoc :battle-mode battle-mode))
           final-state (game-flow/simulate-game initial-state)
           winner (game-state/get-winner final-state)
-          duration-ms (- (.getTime (:ended-at final-state))
-                        (.getTime (:started-at final-state)))
+          duration-ms (- (.getTime ^java.util.Date (:ended-at final-state))
+                        (.getTime ^java.util.Date (:started-at final-state)))
           duration-minutes (/ duration-ms 60000.0)]
       
       (log/info "Game completed:" game-id "Winner:" winner "Turns:" (:turn-count final-state))

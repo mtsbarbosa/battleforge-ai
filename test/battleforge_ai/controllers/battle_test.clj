@@ -252,7 +252,7 @@
       (let [total-rate (+ (:deck1-win-rate result) (:deck2-win-rate result))
             expected-rate (/ (+ (:deck1-wins result) (:deck2-wins result)) 
                            (:total-games result))]
-        (is (< (Math/abs (- total-rate expected-rate)) 0.001)))
+        (is (< (Math/abs (double (- total-rate expected-rate))) 0.001)))
       
       ;; Verify win counts
       (is (= (:deck1-wins result) 
