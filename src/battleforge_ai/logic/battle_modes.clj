@@ -15,7 +15,9 @@
    :in-depth (delay ((requiring-resolve 'battleforge-ai.logic.in-depth-battle/in-depth-battle-handler)))})
 
 (defn get-battle-mode-handler [mode]
-  @(get battle-mode-registry mode))
+  (if-let [handler-delay (get battle-mode-registry mode)]
+    @handler-delay
+    (throw (ex-info (str "Unknown battle mode: " mode) {:mode mode :available (keys battle-mode-registry)}))))
 
 (s/defn list-available-modes :- [BattleMode]
   []

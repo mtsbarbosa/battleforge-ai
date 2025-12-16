@@ -1,6 +1,7 @@
 /target
 /decks/*
 notes.md
+cursor-state.md
 
 .calva
 

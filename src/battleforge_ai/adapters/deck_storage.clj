@@ -36,13 +36,25 @@
                             (update :anomaly-house #(when % (name %)))))
                       cards)))))
 
+(defn- parse-datetime
+  "Parse a datetime string, handling both full instants and date-only formats"
+  [s]
+  (when s
+    (try
+      (time/instant s)
+      (catch Exception _
+        (try
+          (-> (time/local-date s)
+              (time/local-date-time 0 0 0)
+              (time/zoned-date-time "UTC")
+              time/instant)
+          (catch Exception _ (time/instant)))))))
+
 (defn json-map->deck
-  "Convert JSON map back to deck"
   [json-map]
   (-> json-map
-      ;; Handle date fields
-      (update :fetched-at #(if % (time/instant %) (time/instant)))
-      (update :last-updated #(when % (time/instant %)))
+      (update :fetched-at #(or (parse-datetime %) (time/instant)))
+      (update :last-updated parse-datetime)
       ;; Provide default values for missing fields
       (update :win-rate #(or % 0.0))
       (update :sas-rating #(or % {}))  ; SAS rating should be a map
@@ -60,12 +72,14 @@
                 (mapv (fn [card]
                         (cond-> card
                           true (update :house keyword)
-                          true (update :card-type keyword)
-                          true (update :rarity keyword)
-                          ;; Provide defaults for missing required fields
+                          true (update :card-type #(if % (keyword %) :action))
+                          true (update :rarity #(if % (keyword %) :common))
                           (nil? (:number card)) (assoc :number "000")
-                          (nil? (:expansion card)) (assoc :expansion 1)  ; Default card expansion to 1
+                          (nil? (:expansion card)) (assoc :expansion 1)
                           (nil? (:image card)) (assoc :image "")
+                          (:enhancements card) (update :enhancements
+                                                       (fn [enhancements]
+                                                         (mapv #(update % :type keyword) enhancements)))
                           (:maverick-house card) (update :maverick-house keyword)
                           (:anomaly-house card) (update :anomaly-house keyword)
                           (nil? (:maverick-house card)) (dissoc :maverick-house)

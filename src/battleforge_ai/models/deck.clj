@@ -59,6 +59,8 @@
 
 (s/defschema SASRating
   {(s/optional-key :sas-rating) (s/maybe s/Num)
+   (s/optional-key :sas-version) (s/maybe s/Int)
+   (s/optional-key :aerc-score) (s/maybe s/Num)
    (s/optional-key :amber) (s/maybe s/Num)
    (s/optional-key :expected-amber) (s/maybe s/Num)
    (s/optional-key :artifact-control) (s/maybe s/Num)

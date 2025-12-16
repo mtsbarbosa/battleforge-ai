@@ -17,7 +17,7 @@
   [["-1" "--deck1 DECK1" "Path to first deck file" :required true]
    ["-2" "--deck2 DECK2" "Path to second deck file" :required true]
    ["-m" "--mode MODE" "Battle simulation mode (simple, in-depth)"
-    :default "simple"
+    :default :simple
     :parse-fn keyword
     :validate [#(contains? (set (battle-modes/list-available-modes)) %)
                (str "Must be one of: " (str/join ", " (map name (battle-modes/list-available-modes))))]]
@@ -103,12 +103,20 @@
   (println "🗡️  Battle simulation mode")
   (let [deck1-path (:deck1 options)
         deck2-path (:deck2 options)
-        battle-mode (or (:mode options) (battle-modes/get-default-battle-mode))
         num-battles (:battles options)
-        output-path (:output options)
-        mode-info (battle-modes/get-mode-info battle-mode)]
+        output-path (:output options)]
     
     (cond
+      (:help options)
+      (do (println "Battle command options:")
+          (println "  -1, --deck1 DECK1    Path to first deck file (required)")
+          (println "  -2, --deck2 DECK2    Path to second deck file (required)")
+          (println "  -m, --mode MODE      Battle mode: simple, in-depth (default: simple)")
+          (println "  -b, --battles N      Number of battles (default: 100)")
+          (println "  -t, --timeout MIN    Timeout per game (default: 30)")
+          (println "  -o, --output PATH    Output file path")
+          :help)
+      
       (not deck1-path)
       (do (println "❌ Error: Deck1 path is required (use --deck1)")
           :validation-error)
@@ -118,45 +126,34 @@
           :validation-error)
       
       :else
-      (try
-        (println "📡 Loading decks...")
-        
-        ;; Load both decks
-        (let [deck1 (file-storage/load-deck deck1-path)
-              deck2 (file-storage/load-deck deck2-path)]
-          
-          (println "✅ Loaded" (:name deck1) "vs" (:name deck2))
-          (println "⚔️  Battle Mode:" (:name mode-info))
-          (println "📝 " (:description mode-info))
-          (println "🎲 Running" num-battles "battles...")
-          
-          ;; Run battle simulation
-          (let [battle-result (battle-controller/simulate-battle-series!
-                                {:deck1 deck1
-                                 :deck2 deck2
-                                 :num-games num-battles
-                                 :battle-mode battle-mode})
-                summary (battle-controller/format-battle-summary battle-result)]
-            
-            ;; Display results
-            (println)
-            (println summary)
-            
-            ;; Save results if output specified
-            (when output-path
+      (let [battle-mode (or (:mode options) (battle-modes/get-default-battle-mode))
+            mode-info (battle-modes/get-mode-info battle-mode)]
+        (try
+          (println "📡 Loading decks...")
+          (let [deck1 (file-storage/load-deck deck1-path)
+                deck2 (file-storage/load-deck deck2-path)]
+            (println "✅ Loaded" (:name deck1) "vs" (:name deck2))
+            (println "⚔️  Battle Mode:" (:name mode-info))
+            (println "📝 " (:description mode-info))
+            (println "🎲 Running" num-battles "battles...")
+            (let [battle-result (battle-controller/simulate-battle-series!
+                                  {:deck1 deck1
+                                   :deck2 deck2
+                                   :num-games num-battles
+                                   :battle-mode battle-mode})
+                  summary (battle-controller/format-battle-summary battle-result)]
               (println)
-              (println "💾 Saving results to" output-path)
-              ;; TODO: Implement result saving
-              )
-            
-            battle-result))
-        
-        (catch Exception e
-          (println "❌ Error during battle simulation:" (.getMessage e))
-          (when (:verbose options)
-            (println "Stack trace:")
-            (.printStackTrace e))
-          :execution-error)))))
+              (println summary)
+              (when output-path
+                (println)
+                (println "💾 Saving results to" output-path))
+              battle-result))
+          (catch Exception e
+            (println "❌ Error during battle simulation:" (.getMessage e))
+            (when (:verbose options)
+              (println "Stack trace:")
+              (.printStackTrace e))
+            :execution-error))))))
 
 (defn execute-simulate [args options]
   (println "⚔️  Mass simulation mode")
