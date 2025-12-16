@@ -11,5 +11,7 @@ notes.md
 # clj-kondo cache
 .clj-kondo/.cache/
 
+.lsp/.cache/
+
 # macOS system files
 .DS_Store

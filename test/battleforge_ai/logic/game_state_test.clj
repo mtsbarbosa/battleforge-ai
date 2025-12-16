@@ -1,10 +1,8 @@
 (ns battleforge-ai.logic.game-state-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [schema.test :as schema-test]
-            [java-time :as time]
-            [battleforge-ai.logic.game-state :as game-state]
-            [battleforge-ai.models.game :as game]
-            [battleforge-ai.models.deck :as deck]))
+            [java-time.api :as time]
+            [battleforge-ai.logic.game-state :as game-state]))
 
 (use-fixtures :once schema-test/validate-schemas)
 
@@ -174,15 +172,11 @@
 
 (deftest test-has-won
   (testing "has-won? correctly identifies win condition"
-    (let [winning-player (create-test-player "winner" sample-deck-1 7)
-          losing-player (create-test-player "loser" sample-deck-2 7)]
-      ;; Player with 3 keys has won
-      (is (true? (game-state/has-won? (assoc winning-player :keys 3))))
-      
-      ;; Player with less than 3 keys has not won
-      (is (false? (game-state/has-won? (assoc winning-player :keys 2))))
-      (is (false? (game-state/has-won? (assoc winning-player :keys 1))))
-      (is (false? (game-state/has-won? (assoc winning-player :keys 0)))))))
+    (let [player (create-test-player "player" sample-deck-1 7)]
+      (is (true? (game-state/has-won? (assoc player :keys 3))))
+      (is (false? (game-state/has-won? (assoc player :keys 2))))
+      (is (false? (game-state/has-won? (assoc player :keys 1))))
+      (is (false? (game-state/has-won? (assoc player :keys 0)))))))
 
 (deftest test-check-win-condition
   (testing "check-win-condition correctly identifies winner"

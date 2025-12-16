@@ -2,30 +2,21 @@
   (:require [schema.core :as s]
             [clojure.string :as str]))
 
-;; ============================================================================
-;; Deck Models and Schemas
-;; ============================================================================
-
 (s/defschema House
-  "Keyforge house representation"
   (s/enum :brobnar :dis :logos :mars :sanctum :shadows :untamed
           :star-alliance :saurian :unfathomable :ekwidon :geistoid))
 
 (s/defschema CardType
-  "Card type enumeration"
   (s/enum :action :artifact :creature :upgrade))
 
 (s/defschema Rarity
-  "Card rarity enumeration"  
   (s/enum :common :uncommon :rare :special :fixed :variant))
 
 (s/defschema Enhancement
-  "Card enhancement representation"
   {:type (s/enum :amber :capture :damage :draw :discard)
    :value s/Int})
 
 (s/defschema Card
-  "Individual card representation"
   {:id                s/Str
    :name              s/Str
    :house             House
@@ -48,7 +39,6 @@
    (s/optional-key :anomaly?) s/Bool
    (s/optional-key :anomaly-house) House
    (s/optional-key :uuid) s/Str
-   ;; SAS (Synergy Analysis System) scoring fields
    (s/optional-key :aerc-score) (s/maybe s/Num)
    (s/optional-key :expected-amber) (s/maybe s/Num)
    (s/optional-key :amber-control) (s/maybe s/Num)
@@ -65,14 +55,12 @@
    (s/optional-key :copies) (s/maybe s/Int)})
 
 (s/defschema DeckSource
-  "Source where deck was fetched from"
   (s/enum :keyforge-api :decks-of-keyforge :local-file :manual))
 
 (s/defschema SASRating
-  "SAS (SynergyAercsScaling) rating breakdown"
-  {(s/optional-key :sas-rating) (s/maybe s/Num)      ; Overall SAS score
-   (s/optional-key :amber) (s/maybe s/Num)           ; Amber/Aember score
-   (s/optional-key :expected-amber) (s/maybe s/Num)  ; Expected amber per turn
+  {(s/optional-key :sas-rating) (s/maybe s/Num)
+   (s/optional-key :amber) (s/maybe s/Num)
+   (s/optional-key :expected-amber) (s/maybe s/Num)
    (s/optional-key :artifact-control) (s/maybe s/Num)
    (s/optional-key :creature-control) (s/maybe s/Num)
    (s/optional-key :efficiency) (s/maybe s/Num)
@@ -86,11 +74,10 @@
    (s/optional-key :antisynergy-rating) (s/maybe s/Num)})
 
 (s/defschema Deck
-  "Complete deck representation"
   {:id            s/Str
    :name          s/Str  
-   :uuid          (s/maybe s/Str)    ; Keyforge UUID
-   :identity      (s/maybe s/Str)    ; URL-safe name
+   :uuid          (s/maybe s/Str)
+   :identity      (s/maybe s/Str)
    :houses        [House]
    :cards         [Card]
    :expansion     s/Int
@@ -106,7 +93,6 @@
    :is-alliance?  (s/maybe s/Bool)
    :last-updated  (s/maybe java.time.Instant)
    :fetched-at    java.time.Instant
-   ;; Calculated fields
    :total-power   (s/maybe s/Int)
    :total-amber   (s/maybe s/Int)
    :creature-count (s/maybe s/Int)
@@ -114,12 +100,7 @@
    :artifact-count (s/maybe s/Int)
    :upgrade-count  (s/maybe s/Int)})
 
-;; ============================================================================
-;; API Response Schemas
-;; ============================================================================
-
 (s/defschema KeyforgeApiCard
-  "Card structure from Keyforge API"
   {:id s/Str
    :card_title s/Str
    :card_text (s/maybe s/Str)
@@ -138,7 +119,6 @@
    (s/optional-key :is_non_deck) s/Bool})
 
 (s/defschema KeyforgeApiDeck
-  "Deck structure from Keyforge API"
   {:data {:id s/Str
           :name s/Str
           :expansion s/Int
@@ -147,7 +127,6 @@
    :_linked {:cards [KeyforgeApiCard]}})
 
 (s/defschema DecksOfKeyforgeCard
-  "Card structure from Decks of Keyforge API"
   {:cardTitle s/Str
    :cardText (s/maybe s/Str)
    :cardType s/Str
@@ -164,12 +143,7 @@
    :anomaly s/Bool
    :enhanced s/Bool})
 
-;; ============================================================================
-;; Deck Analysis Models
-;; ============================================================================
-
 (s/defschema DeckStats
-  "Statistical analysis of a deck"
   {:deck-id           s/Str
    :average-amber     s/Num
    :creature-quality  s/Num
@@ -180,7 +154,6 @@
    :consistency-score s/Num})
 
 (s/defschema HouseAnalysis
-  "Analysis of individual house performance in a deck"
   {:house             House
    :card-count        s/Int
    :total-amber       s/Int
@@ -190,72 +163,49 @@
    :upgrade-count     s/Int
    :synergy-rating    s/Num})
 
-;; ============================================================================
-;; Utility Functions (Pure - No Implementation Yet)
-;; ============================================================================
-
-(defn deck->houses
-  "Extract houses from a deck"
-  [deck]
+(defn deck->houses [deck]
   (:houses deck))
 
-(defn count-by-type
-  "Count cards by type in a deck"
-  [deck card-type]
+(defn count-by-type [deck card-type]
   (->> (:cards deck)
        (filter #(= (:card-type %) card-type))
        (count)))
 
-(defn calculate-deck-power
-  "Calculate total power rating for a deck"
-  [deck]
+(defn calculate-deck-power [deck]
   (->> (:cards deck)
        (map :power)
        (filter some?)
        (map #(if (number? %) % 0))
        (reduce + 0)))
 
-(defn calculate-total-amber
-  "Calculate total amber in a deck"
-  [deck]
+(defn calculate-total-amber [deck]
   (->> (:cards deck)
        (map :amber)
        (map #(if (number? %) % 0))
        (reduce + 0)))
 
-(defn validate-deck
-  "Validate that a deck follows Keyforge rules"
-  [deck]
+(defn validate-deck [deck]
   (let [cards (:cards deck)
         houses (:houses deck)]
     (and
-      ;; Exactly 36 cards
       (= 36 (count cards))
-      ;; Exactly 3 houses
       (= 3 (count houses))
-      ;; 12 cards per house (approximately, accounting for mavericks/anomalies)
       (every? #(<= 10 % 14) 
         (vals (frequencies (map :house cards)))))))
 
-(defn normalize-house-name
-  "Normalize house name from API format to our format"
-  [house-str]
+(defn normalize-house-name [house-str]
   (-> house-str
       str/lower-case
       (str/replace #"\s+" "")
       (str/replace #"[^a-z]" "")
       keyword))
 
-(defn normalize-card-type
-  "Normalize card type from API format to our format"
-  [type-str]
+(defn normalize-card-type [type-str]
   (-> type-str
       str/lower-case
       keyword))
 
-(defn normalize-rarity
-  "Normalize rarity from API format to our format"
-  [rarity-str]
+(defn normalize-rarity [rarity-str]
   (-> rarity-str
       str/lower-case
       keyword)) 

@@ -1,5 +1,5 @@
 (ns battleforge-ai.diplomat.cli-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing]]
             [battleforge-ai.diplomat.cli :as cli]))
 
 (deftest test-validate-args

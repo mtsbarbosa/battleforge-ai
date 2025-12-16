@@ -83,7 +83,7 @@
 
 (defn fetch-deck!
   "Orchestrate deck fetching operation: validate, fetch, store, report"
-  [{:keys [deck-id source output-dir deck-name overwrite? verbose?] :as params}]
+  [params]
   (log/info "Starting deck fetch operation" params)
   
   (try

@@ -1,11 +1,10 @@
 (ns battleforge-ai.adapters.deck-storage-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [schema.test :as schema-test]
             [clojure.java.io :as io]
-            [java-time :as time]
+            [java-time.api :as time]
             [battleforge-ai.adapters.deck-storage :as deck-adapter]
-            [battleforge-ai.diplomat.file-storage :as file-diplomat]
-            [battleforge-ai.models.deck :as deck]))
+            [battleforge-ai.diplomat.file-storage :as file-diplomat]))
 
 (use-fixtures :once schema-test/validate-schemas)
 

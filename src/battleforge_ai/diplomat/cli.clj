@@ -3,7 +3,8 @@
             [clojure.string :as str]
             [battleforge-ai.controllers.deck :as deck-controller]
             [battleforge-ai.controllers.battle :as battle-controller]
-            [battleforge-ai.diplomat.file-storage :as file-storage])
+            [battleforge-ai.diplomat.file-storage :as file-storage]
+            [battleforge-ai.logic.battle-modes :as battle-modes])
   (:gen-class))
 
 (def cli-options
@@ -15,6 +16,11 @@
 (def battle-options
   [["-1" "--deck1 DECK1" "Path to first deck file" :required true]
    ["-2" "--deck2 DECK2" "Path to second deck file" :required true]
+   ["-m" "--mode MODE" "Battle simulation mode (simple, in-depth)"
+    :default "simple"
+    :parse-fn keyword
+    :validate [#(contains? (set (battle-modes/list-available-modes)) %)
+               (str "Must be one of: " (str/join ", " (map name (battle-modes/list-available-modes))))]]
    ["-b" "--battles BATTLES" "Number of battles to simulate"
     :default 100
     :parse-fn #(Integer/parseInt %)]
@@ -63,6 +69,7 @@
         "  simulate    Run mass simulations with multiple decks"
         "  stats       Generate statistics from simulation results"
         "  fetch-deck  Fetch a deck from online sources and save as JSON"
+        "  list-modes  Show available battle simulation modes"
         ""
         "Use 'battleforge-ai command --help' for command-specific options."]
        (str/join \newline)))
@@ -92,12 +99,14 @@
        :command-args (rest arguments)
        :options options})))
 
-(defn execute-battle [args options]
+(defn execute-battle [_ options]
   (println "🗡️  Battle simulation mode")
   (let [deck1-path (:deck1 options)
         deck2-path (:deck2 options)
+        battle-mode (or (:mode options) (battle-modes/get-default-battle-mode))
         num-battles (:battles options)
-        output-path (:output options)]
+        output-path (:output options)
+        mode-info (battle-modes/get-mode-info battle-mode)]
     
     (cond
       (not deck1-path)
@@ -117,13 +126,16 @@
               deck2 (file-storage/load-deck deck2-path)]
           
           (println "✅ Loaded" (:name deck1) "vs" (:name deck2))
+          (println "⚔️  Battle Mode:" (:name mode-info))
+          (println "📝 " (:description mode-info))
           (println "🎲 Running" num-battles "battles...")
           
           ;; Run battle simulation
           (let [battle-result (battle-controller/simulate-battle-series!
                                 {:deck1 deck1
                                  :deck2 deck2
-                                 :num-games num-battles})
+                                 :num-games num-battles
+                                 :battle-mode battle-mode})
                 summary (battle-controller/format-battle-summary battle-result)]
             
             ;; Display results
@@ -191,35 +203,48 @@
             (println "Stack trace:")
             (.printStackTrace e)))))))
 
+(defn execute-list-modes [_args _options]
+  (println "🎮 Available Battle Simulation Modes:")
+  (println)
+  (doseq [mode-info (battle-modes/get-all-modes-info)]
+    (println (format "⚔️  %s (%s)" 
+                     (:name mode-info) 
+                     (name (:mode mode-info))))
+    (println (format "   %s" (:description mode-info)))
+    (println))
+  (println "Use --mode to select a battle mode (e.g., --mode simple)"))
+
 (defn execute-command [command args global-options]
   (case command
-    "battle" (let [{:keys [options arguments errors summary]} 
+    "battle" (let [{:keys [options arguments errors _summary]} 
                    (parse-opts args (concat cli-options battle-options))]
                (if errors
                  (do (println (error-msg errors))
                      (System/exit 1))
                  (execute-battle arguments (merge global-options options))))
     
-    "simulate" (let [{:keys [options arguments errors summary]} 
+    "simulate" (let [{:keys [options arguments errors _summary]} 
                      (parse-opts args (concat cli-options simulate-options))]
                  (if errors
                    (do (println (error-msg errors))
                        (System/exit 1))
                    (execute-simulate arguments (merge global-options options))))
     
-    "stats" (let [{:keys [options arguments errors summary]} 
+    "stats" (let [{:keys [options arguments errors _summary]} 
                   (parse-opts args (concat cli-options stats-options))]
               (if errors
                 (do (println (error-msg errors))
                     (System/exit 1))
                 (execute-stats arguments (merge global-options options))))
     
-    "fetch-deck" (let [{:keys [options arguments errors summary]} 
+    "fetch-deck" (let [{:keys [options arguments errors _summary]} 
                        (parse-opts args (concat cli-options fetch-deck-options))]
                    (if errors
                      (do (println (error-msg errors))
                          (System/exit 1))
                      (execute-fetch-deck arguments (merge global-options options))))
+    
+    "list-modes" (execute-list-modes args global-options)
     
     (do (println (str "Unknown command: " command))
         (System/exit 1))))

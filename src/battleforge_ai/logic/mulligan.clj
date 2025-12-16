@@ -1,6 +1,5 @@
 (ns battleforge-ai.logic.mulligan
-  (:require [clojure.string :as str]
-            [schema.core :as s]
+  (:require [schema.core :as s]
             [battleforge-ai.models.deck :as deck]
             [battleforge-ai.models.game :as game]
             [battleforge-ai.logic.game-state :as game-state]))

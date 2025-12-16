@@ -10,7 +10,7 @@
 
 (s/defn get-current-key-cost :- s/Int
   "Get the current cost to forge a key (base 6, may be modified later)"
-  [player :- game/Player]
+  [_player :- game/Player]
   ;; For now, always 6 amber
   ;; In full implementation, this could be modified by cards/effects
   key-cost)

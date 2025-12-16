@@ -1,20 +1,19 @@
 (ns battleforge-ai.controllers.battle-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [schema.test :as schema-test]
-            [java-time :as time]
-            [battleforge-ai.controllers.battle :as battle-controller]
-            [battleforge-ai.models.deck :as deck]
-            [battleforge-ai.models.battle :as battle]))
+            [java-time.api :as time]
+            [battleforge-ai.controllers.battle :as battle-controller]))
 
 (use-fixtures :once schema-test/validate-schemas)
 
-(def sample-card
-  {:id "card-1"
-   :name "Sample Card"
-   :house :brobnar
-   :card-type :action
-   :amber 2
-   :power nil
+;; Helper to create test cards
+(defn make-card [id name house card-type amber power]
+  {:id id
+   :name name
+   :house house
+   :card-type card-type
+   :amber amber
+   :power power
    :armor nil
    :rarity :common
    :card-text nil
@@ -24,11 +23,24 @@
    :number "001"
    :image nil})
 
+;; Create house cards - 12 per house with mix of creatures and actions
+(defn make-house-cards [house prefix]
+  (concat
+    ;; 6 creatures with power (for fighting and reaping)
+    (for [i (range 1 7)]
+      (make-card (str prefix "-creature-" i) (str house " Creature " i) house :creature 1 3))
+    ;; 6 actions with amber pips (for instant amber gain)
+    (for [i (range 1 7)]
+      (make-card (str prefix "-action-" i) (str house " Action " i) house :action 2 nil))))
+
 (def sample-deck-1
   {:id "test-deck-1"
    :name "Test Deck 1"
    :houses [:brobnar :dis :logos]
-   :cards (vec (repeat 36 sample-card))
+   :cards (vec (concat 
+                 (make-house-cards :brobnar "d1-brob")
+                 (make-house-cards :dis "d1-dis")
+                 (make-house-cards :logos "d1-logos")))
    :expansion 341
    :source :manual
    :fetched-at (time/instant)
@@ -55,7 +67,10 @@
   {:id "test-deck-2"
    :name "Test Deck 2"
    :houses [:mars :sanctum :shadows]
-   :cards (vec (repeat 36 sample-card))
+   :cards (vec (concat 
+                 (make-house-cards :mars "d2-mars")
+                 (make-house-cards :sanctum "d2-sanc")
+                 (make-house-cards :shadows "d2-shad")))
    :expansion 341
    :source :manual
    :fetched-at (time/instant)
@@ -136,7 +151,7 @@
 (deftest test-simulate-single-game
   (testing "simulate-single-game produces valid game result"
     (let [game-id "test-game-123"
-          result (battle-controller/simulate-single-game sample-deck-1 sample-deck-2 game-id)]
+          result (battle-controller/simulate-single-game sample-deck-1 sample-deck-2 game-id :simple)]
       
       (is (= game-id (:id result)))
       (is (= (:id sample-deck-1) (:player1-deck result)))

@@ -1,7 +1,8 @@
 (ns battleforge-ai.models.deck-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing use-fixtures function?]]
+            [schema.core :as s]
             [schema.test :as schema-test]
-            [java-time :as time]
+            [java-time.api :as time]
             [battleforge-ai.models.deck :as deck]))
 
 (use-fixtures :once schema-test/validate-schemas)
@@ -51,26 +52,26 @@
 
 (deftest test-card-schema
   (testing "valid card conforms to schema"
-    (is (nil? (schema.core/check deck/Card sample-card))))
+    (is (nil? (s/check deck/Card sample-card))))
   
   (testing "invalid card fails schema validation"
     (let [invalid-card (assoc sample-card :house :invalid-house)]
-      (is (some? (schema.core/check deck/Card invalid-card))))))
+      (is (some? (s/check deck/Card invalid-card))))))
 
 (deftest test-deck-schema
   (testing "valid deck conforms to schema"
-    (is (nil? (schema.core/check deck/Deck sample-deck))))
+    (is (nil? (s/check deck/Deck sample-deck))))
   
   (testing "deck with invalid house fails"
     (let [invalid-deck (assoc sample-deck :houses [:invalid :house :names])]
-      (is (some? (schema.core/check deck/Deck invalid-deck))))))
+      (is (some? (s/check deck/Deck invalid-deck))))))
 
 (deftest test-house-enum
   (testing "all keyforge houses are supported"
     (let [houses [:brobnar :dis :logos :mars :sanctum :shadows :untamed
                   :star-alliance :saurian :unfathomable :ekwidon :geistoid]]
       (doseq [house houses]
-        (is (nil? (schema.core/check deck/House house)))))))
+        (is (nil? (s/check deck/House house)))))))
 
 ;; TODO: Add tests for utility functions when implemented
 (deftest test-utility-functions

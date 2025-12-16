@@ -1,8 +1,7 @@
 (ns battleforge-ai.logic.key-forging-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [schema.test :as schema-test]
-            [battleforge-ai.logic.key-forging :as key-forging]
-            [battleforge-ai.models.game :as game]))
+            [battleforge-ai.logic.key-forging :as key-forging]))
 
 (use-fixtures :once schema-test/validate-schemas)
 

@@ -1,6 +1,7 @@
 (ns battleforge-ai.controllers.deck-test
-  (:require [clojure.test :refer :all]
-            [battleforge-ai.controllers.deck :as deck-controller]))
+  (:require [clojure.test :refer [deftest is testing]]
+            [battleforge-ai.controllers.deck :as deck-controller]
+            [battleforge-ai.diplomat.file-storage]))
 
 (deftest test-validate-fetch-deck-params!
   (testing "validates required parameters"

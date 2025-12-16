@@ -1,18 +1,18 @@
 (ns battleforge-ai.adapters.keyforge-api
   (:require [clj-http.client :as http]
-            [cheshire.core :as json]
+            [clojure.string :as str]
             [clojure.tools.logging :as log]
             [schema.core :as s]
             [battleforge-ai.models.deck :as deck]
-            [java-time :as time]))
+            [java-time.api :as time]))
 
 ;; ============================================================================
 ;; API Configuration
 ;; ============================================================================
 
 (def ^:private api-base-url "https://www.keyforgegame.com/api")
-(def ^:private request-timeout 30000) ; 30 seconds
-(def ^:private rate-limit-delay 1000) ; 1 second between requests
+(def ^:private request-timeout 30000)
+(def ^:private rate-limit-delay 1000)
 
 ;; ============================================================================
 ;; HTTP Utilities
@@ -45,12 +45,12 @@
     (let [valid-keywords #{:elusive :skirmish :taunt :deploy :alpha :omega 
                            :hazardous :assault :poison :splash-attack 
                            :treachery :versatile}
-          lines (clojure.string/split card-text #"[\r\n]")
-          potential-keywords (mapcat #(clojure.string/split % #"\.") lines)
+          lines (str/split card-text #"[\r\n]")
+          potential-keywords (mapcat #(str/split % #"\.") lines)
           normalized-keywords (map #(-> % 
-                                        clojure.string/lower-case 
-                                        clojure.string/trim
-                                        (clojure.string/replace #"\s+" "-")
+                                        str/lower-case 
+                                        str/trim
+                                        (str/replace #"\s+" "-")
                                         keyword) 
                                    potential-keywords)]
       (->> normalized-keywords
@@ -61,9 +61,9 @@
   "Transform Keyforge API card to our internal format"
   [api-card]
   (let [card-id (-> (:card_title api-card)
-                    clojure.string/lower-case
-                    (clojure.string/replace #"[?.!,]" "")
-                    (clojure.string/replace #"[\s']" "-"))]
+                    str/lower-case
+                    (str/replace #"[?.!,]" "")
+                    (str/replace #"[\s']" "-"))]
     {:id card-id
      :name (:card_title api-card)
      :house (deck/normalize-house-name (:house api-card))
@@ -113,9 +113,9 @@
      :name (:name deck-data)
      :uuid (:id deck-data)
      :identity (-> (:name deck-data)
-                   clojure.string/lower-case
-                   (clojure.string/replace #"[?.!,]" "")
-                   (clojure.string/replace #"[\s']" "-"))
+                   str/lower-case
+                   (str/replace #"[?.!,]" "")
+                   (str/replace #"[\s']" "-"))
      :houses houses
      :cards cards
      :expansion (:expansion deck-data)

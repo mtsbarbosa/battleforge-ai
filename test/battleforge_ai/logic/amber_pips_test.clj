@@ -1,8 +1,7 @@
 (ns battleforge-ai.logic.amber-pips-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [schema.test :as schema-test]
-            [battleforge-ai.logic.amber-pips :as amber-pips]
-            [battleforge-ai.models.game :as game]))
+            [battleforge-ai.logic.amber-pips :as amber-pips]))
 
 (use-fixtures :once schema-test/validate-schemas)
 

@@ -1,12 +1,12 @@
 (ns battleforge-ai.adapters.decks-of-keyforge-api
   (:require [clj-http.client :as http]
-            [cheshire.core :as json]
+            [clojure.string :as str]
             [clojure.tools.logging :as log]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [schema.core :as s]
             [battleforge-ai.models.deck :as deck]
-            [java-time :as time]))
+            [java-time.api :as time]))
 
 ;; ============================================================================
 ;; API Configuration  
@@ -92,12 +92,12 @@
     []
     (let [valid-keywords #{:elusive :skirmish :taunt :deploy :alpha :omega 
                            :hazardous :assault :poison :splash-attack}
-          lines (clojure.string/split card-text #"[\r\n]")
-          potential-keywords (mapcat #(clojure.string/split % #"\.") lines)
+          lines (str/split card-text #"[\r\n]")
+          potential-keywords (mapcat #(str/split % #"\.") lines)
           normalized-keywords (map #(-> % 
-                                        clojure.string/lower-case 
-                                        clojure.string/trim
-                                        (clojure.string/replace #"\s+" "-")
+                                        str/lower-case 
+                                        str/trim
+                                        (str/replace #"\s+" "-")
                                         keyword) 
                                    potential-keywords)]
       (->> normalized-keywords
@@ -108,9 +108,9 @@
   "Transform Decks of Keyforge API card to our internal format"
   [api-card house sas-data]
   (let [card-id (-> (:cardTitle api-card)
-                    clojure.string/lower-case
-                    (clojure.string/replace #"[?.!,]" "")
-                    (clojure.string/replace #"[\s']" "-"))
+                    str/lower-case
+                    (str/replace #"[?.!,]" "")
+                    (str/replace #"[\s']" "-"))
         enhanced? (:enhanced api-card)]
     {:id card-id
      :name (:cardTitle api-card)
@@ -230,9 +230,9 @@
      :name (:name deck-data)
      :uuid (:keyforge_id deck-data)
      :identity (-> (:name deck-data)
-                   clojure.string/lower-case
-                   (clojure.string/replace #"[?.!,]" "")
-                   (clojure.string/replace #"[\s']" "-"))
+                   str/lower-case
+                   (str/replace #"[?.!,]" "")
+                   (str/replace #"[\s']" "-"))
      :houses houses
      :cards cards
      :expansion (:expansion deck-data)
@@ -288,20 +288,16 @@
         houses-and-cards (:housesAndCards deck-data)
         synergy-details (:synergyDetails deck-data)
         
-        ;; Create lookup map for SAS data by card name (handling enhanced versions)
         sas-lookup (reduce (fn [acc sas-entry]
-                             (let [card-name (:cardName sas-entry)
-                                   base-name (clojure.string/replace card-name #" Enhanced$" "")]
+                             (let [card-name (:cardName sas-entry)]
                                (assoc acc card-name sas-entry)))
                            {}
                            synergy-details)
         
-        ;; Process all cards with their SAS data
         cards (mapcat (fn [{:keys [house cards]}]
                         (map (fn [card]
                                (let [card-title (:cardTitle card)
                                      enhanced? (:enhanced card)
-                                     ;; Try enhanced name first, then base name
                                      sas-key (if enhanced?
                                                (str card-title " Enhanced")
                                                card-title)
@@ -323,9 +319,9 @@
      :name deck-name
      :uuid deck-uuid
      :identity (-> deck-name
-                   clojure.string/lower-case
-                   (clojure.string/replace #"[?.!,]" "")
-                   (clojure.string/replace #"[\s']" "-"))
+                   str/lower-case
+                   (str/replace #"[?.!,]" "")
+                   (str/replace #"[\s']" "-"))
      :houses houses
      :cards cards
      :expansion (:expansion deck-data)
@@ -374,10 +370,8 @@
   "Fetch a deck from Decks of Keyforge API - uses v3 API if API key available, falls back to legacy"
   [deck-id :- s/Str]
   (if (and (get-api-key) (re-matches #"^[a-fA-F0-9-]{36}$" deck-id))
-    ;; Use v3 API for Keyforge UUIDs when API key is available
     (let [response (fetch-deck-v3 deck-id)]
       (transform-dok-v3-deck response deck-id))
-    ;; Fall back to legacy API (will likely fail but maintains compatibility)
     (let [response (if (re-matches #"^[a-fA-F0-9-]{36}$" deck-id)
                      (fetch-deck-by-keyforge-id deck-id)
                      (fetch-deck-by-dok-id deck-id))]
@@ -389,7 +383,6 @@
   (if (get-api-key)
     (try
       (log/info "Testing DoK API key...")
-      ;; Use a well-known deck UUID for testing
       (let [test-uuid "938ded7f-4ea0-4698-b47c-2cdabb44e76c"
             url (str api-base-url "/" api-version "/decks/" test-uuid)]
         (make-request url {})

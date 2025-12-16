@@ -1,8 +1,7 @@
 (ns battleforge-ai.logic.mulligan-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [schema.test :as schema-test]
-            [battleforge-ai.logic.mulligan :as mulligan]
-            [battleforge-ai.models.game :as game]))
+            [battleforge-ai.logic.mulligan :as mulligan]))
 
 (use-fixtures :once schema-test/validate-schemas)
 
