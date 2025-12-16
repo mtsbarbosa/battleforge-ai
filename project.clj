@@ -22,14 +22,18 @@
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}
              :dev {:dependencies [[org.clojure/test.check "1.1.1"]]
                    :plugins [[com.github.clj-kondo/lein-clj-kondo "2024.03.13"]
-                             [jonase/eastwood "1.4.2"]]}}
+                             [jonase/eastwood "1.4.2"]
+                             [lein-zprint "1.2.9"]]}}
   
   :jvm-opts ["-Xmx2g"]
-  
+
+  :zprint {:old? false}
+
   :aliases {"battle" ["run" "-m" "battleforge-ai.diplomat.cli"]
             "simulate" ["run" "-m" "battleforge-ai.diplomat.cli"]
             "stats" ["run" "-m" "battleforge-ai.diplomat.cli"]
             "fetch-deck" ["run" "fetch-deck"]
             "lint" ["with-profile" "dev" "do" ["clj-kondo"] ["eastwood"]]
             "lint:kondo" ["with-profile" "dev" "clj-kondo"]
-            "lint:eastwood" ["with-profile" "dev" "eastwood"]}) 
+            "lint:eastwood" ["with-profile" "dev" "eastwood"]
+}) 

@@ -151,11 +151,15 @@ src/
 │   │   ├── reporting.clj    # Report generation
 │   │   └── export.clj       # Data export utilities
 │   ├── adapters/            # Data transformation (pure functions)
-│   │   ├── keyforge_api.clj     # Official Keyforge API data transformation
-│   │   ├── decks_of_keyforge_api.clj # Decks of Keyforge API data transformation
-│   │   └── deck_storage.clj     # Deck serialization/deserialization
+│   │   ├── keyforge_api.clj         # Keyforge API response transformation
+│   │   ├── decks_of_keyforge_api.clj # DoK API response transformation
+│   │   └── deck_storage.clj         # Deck serialization/deserialization
 │   └── diplomat/            # External I/O operations (calls adapters)
-│       └── file_storage.clj     # File system operations
+│       ├── cli.clj              # Command-line interface
+│       ├── file_storage.clj     # File system operations
+│       └── http_out/            # HTTP client diplomats
+│           ├── keyforge_api.clj     # Keyforge API HTTP requests
+│           └── decks_of_keyforge_api.clj # DoK API HTTP requests
 ```
 
 ## Usage Examples
@@ -393,6 +397,18 @@ lein lint:kondo
 
 # Run eastwood only
 lein lint:eastwood
+```
+
+### Code Formatting (zprint)
+```bash
+# Format all Clojure files
+make fmt
+
+# Check formatting without modifying (CI-friendly)
+make fmt-check
+
+# Run all checks (format + lint + test)
+make all
 ```
 
 ### Development REPL

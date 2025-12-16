@@ -8,18 +8,18 @@
 (defn create-test-player
   "Create a test player with all required fields"
   [amber keys]
-  {:id "test-player"
-   :deck []
-   :hand []
-   :discard []
-   :purged []
-   :archive []
-   :battleline []
-   :artifacts []
-   :houses [:brobnar :dis :logos]
-   :amber amber
-   :keys keys
-   :chains 0
+  {:id "test-player",
+   :deck [],
+   :hand [],
+   :discard [],
+   :purged [],
+   :archive [],
+   :battleline [],
+   :artifacts [],
+   :houses [:brobnar :dis :logos],
+   :amber amber,
+   :keys keys,
+   :chains 0,
    :ready-amber 0})
 
 (deftest test-get-current-key-cost
@@ -28,10 +28,10 @@
       (is (= 6 (key-forging/get-current-key-cost player))))))
 
 (deftest test-can-forge-key-sufficient-amber
-  (testing "can-forge-key? returns true when player has enough amber and less than 3 keys"
+  (testing
+    "can-forge-key? returns true when player has enough amber and less than 3 keys"
     (let [player (create-test-player 6 0)]
       (is (true? (key-forging/can-forge-key? player))))
-    
     (let [player (create-test-player 10 2)]
       (is (true? (key-forging/can-forge-key? player))))))
 
@@ -39,7 +39,6 @@
   (testing "can-forge-key? returns false when player doesn't have enough amber"
     (let [player (create-test-player 5 0)]
       (is (false? (key-forging/can-forge-key? player))))
-    
     (let [player (create-test-player 0 1)]
       (is (false? (key-forging/can-forge-key? player))))))
 

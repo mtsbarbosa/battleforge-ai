@@ -1,0 +1,11 @@
+{:width 100
+ :style :community
+ :map {:comma? false
+       :force-nl? true}
+ :pair {:force-nl? true}
+ :binding {:force-nl? true}
+ :fn-map {"deftest" :arg1-body
+          "testing" :arg1-body
+          "s/defn" [:arg1-body {:list {:hang-size 0}}]
+          "s/defschema" :arg1-body}}
+
