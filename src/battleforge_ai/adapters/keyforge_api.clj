@@ -1,69 +1,36 @@
 (ns battleforge-ai.adapters.keyforge-api
-  (:require [clj-http.client :as http]
-            [cheshire.core :as json]
-            [clojure.tools.logging :as log]
+  (:require [clojure.string :as str]
             [schema.core :as s]
             [battleforge-ai.models.deck :as deck]
-            [java-time :as time]))
-
-;; ============================================================================
-;; API Configuration
-;; ============================================================================
-
-(def ^:private api-base-url "https://www.keyforgegame.com/api")
-(def ^:private request-timeout 30000) ; 30 seconds
-(def ^:private rate-limit-delay 1000) ; 1 second between requests
-
-;; ============================================================================
-;; HTTP Utilities
-;; ============================================================================
-
-(defn- make-request
-  "Make HTTP request with error handling and rate limiting"
-  [url options]
-  (Thread/sleep rate-limit-delay) ; Simple rate limiting
-  (try
-    (let [response (http/get url (merge {:timeout request-timeout
-                                         :accept :json
-                                         :as :json} 
-                                        options))]
-      (:body response))
-    (catch Exception e
-      (log/error e "Failed to make request to" url)
-      (throw (ex-info "API request failed" 
-                      {:url url :error (.getMessage e)})))))
-
-;; ============================================================================
-;; Card Transformation
-;; ============================================================================
+            [java-time.api :as time]))
 
 (defn- parse-keywords
   "Extract keywords from card text"
   [card-text]
   (if (nil? card-text)
     []
-    (let [valid-keywords #{:elusive :skirmish :taunt :deploy :alpha :omega 
-                           :hazardous :assault :poison :splash-attack 
+    (let [valid-keywords #{:elusive :skirmish :taunt :deploy :alpha :omega
+                           :hazardous :assault :poison :splash-attack
                            :treachery :versatile}
-          lines (clojure.string/split card-text #"[\r\n]")
-          potential-keywords (mapcat #(clojure.string/split % #"\.") lines)
-          normalized-keywords (map #(-> % 
-                                        clojure.string/lower-case 
-                                        clojure.string/trim
-                                        (clojure.string/replace #"\s+" "-")
-                                        keyword) 
+          lines (str/split card-text #"[\r\n]")
+          potential-keywords (mapcat #(str/split % #"\.") lines)
+          normalized-keywords (map #(-> %
+                                        str/lower-case
+                                        str/trim
+                                        (str/replace #"\s+" "-")
+                                        keyword)
                                    potential-keywords)]
       (->> normalized-keywords
            (filter valid-keywords)
            (into [])))))
 
-(defn- transform-keyforge-card
-  "Transform Keyforge API card to our internal format"
+(defn- api-card->card
+  "Transform Keyforge API card to internal card format"
   [api-card]
   (let [card-id (-> (:card_title api-card)
-                    clojure.string/lower-case
-                    (clojure.string/replace #"[?.!,]" "")
-                    (clojure.string/replace #"[\s']" "-"))]
+                    str/lower-case
+                    (str/replace #"[?.!,]" "")
+                    (str/replace #"[\s']" "-"))]
     {:id card-id
      :name (:card_title api-card)
      :house (deck/normalize-house-name (:house api-card))
@@ -97,25 +64,21 @@
                       (deck/normalize-house-name (:house api-card)))
      :uuid (:id api-card)}))
 
-;; ============================================================================
-;; Deck Transformation
-;; ============================================================================
-
-(defn- transform-keyforge-deck
-  "Transform Keyforge API deck response to our internal format"
+(s/defn api-response->deck :- deck/Deck
+  "Transform Keyforge API response to internal deck format"
   [api-response]
   (let [deck-data (:data api-response)
         linked-cards (:cards (:_linked api-response))
-        cards (map transform-keyforge-card linked-cards)
-        houses (mapv deck/normalize-house-name 
+        cards (map api-card->card linked-cards)
+        houses (mapv deck/normalize-house-name
                      (get-in deck-data [:_links :houses]))]
     {:id (:id deck-data)
      :name (:name deck-data)
      :uuid (:id deck-data)
      :identity (-> (:name deck-data)
-                   clojure.string/lower-case
-                   (clojure.string/replace #"[?.!,]" "")
-                   (clojure.string/replace #"[\s']" "-"))
+                   str/lower-case
+                   (str/replace #"[?.!,]" "")
+                   (str/replace #"[\s']" "-"))
      :houses houses
      :cards cards
      :expansion (:expansion deck-data)
@@ -137,19 +100,6 @@
      :action-count (deck/count-by-type {:cards cards} :action)
      :artifact-count (deck/count-by-type {:cards cards} :artifact)
      :upgrade-count (deck/count-by-type {:cards cards} :upgrade)}))
-
-;; ============================================================================
-;; Public API
-;; ============================================================================
-
-(s/defn fetch-deck :- deck/Deck
-  "Fetch a deck from the Keyforge API by UUID"
-  [deck-uuid :- s/Str]
-  (log/info "Fetching deck from Keyforge API:" deck-uuid)
-  (let [url (str api-base-url "/decks/" deck-uuid "/?links=cards")
-        response (make-request url {})]
-    (log/debug "Received deck response for" deck-uuid)
-    (transform-keyforge-deck response)))
 
 (defn validate-deck-uuid
   "Validate that a string looks like a valid Keyforge deck UUID"

@@ -20,13 +20,16 @@
   
   :profiles {:uberjar {:aot :all
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}
-             :dev {:dependencies [[org.clojure/test.check "1.1.1"]
-                                  [midje "1.10.9"]]
-                   :plugins [[lein-midje "3.2.1"]]}}
+             :dev {:dependencies [[org.clojure/test.check "1.1.1"]]
+                   :plugins [[com.github.clj-kondo/lein-clj-kondo "2024.03.13"]
+                             [jonase/eastwood "1.4.2"]]}}
   
   :jvm-opts ["-Xmx2g"]
   
   :aliases {"battle" ["run" "-m" "battleforge-ai.diplomat.cli"]
             "simulate" ["run" "-m" "battleforge-ai.diplomat.cli"]
             "stats" ["run" "-m" "battleforge-ai.diplomat.cli"]
-            "fetch-deck" ["run" "fetch-deck"]}) 
+            "fetch-deck" ["run" "fetch-deck"]
+            "lint" ["with-profile" "dev" "do" ["clj-kondo"] ["eastwood"]]
+            "lint:kondo" ["with-profile" "dev" "clj-kondo"]
+            "lint:eastwood" ["with-profile" "dev" "eastwood"]}) 

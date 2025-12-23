@@ -383,6 +383,18 @@ lein test battleforge-ai.adapters.deck-storage-test
 lein test :coverage
 ```
 
+### Linting
+```bash
+# Run all linters (clj-kondo + eastwood)
+lein lint
+
+# Run clj-kondo only
+lein lint:kondo
+
+# Run eastwood only
+lein lint:eastwood
+```
+
 ### Development REPL
 ```bash
 lein repl

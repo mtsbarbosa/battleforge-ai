@@ -1,5 +1,6 @@
 (ns battleforge-ai.diplomat.cli-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing]]
+            [clojure.string :as str]
             [battleforge-ai.diplomat.cli :as cli]))
 
 (deftest test-validate-args
@@ -36,12 +37,12 @@
   (testing "usage function generates help text"
     (let [usage-text (cli/usage "test summary")]
       (is (string? usage-text))
-      (is (.contains usage-text "BattleForge AI"))))
-  
+      (is (str/includes? usage-text "BattleForge AI"))))
+
   (testing "error-msg function formats errors"
     (let [error-text (cli/error-msg ["error1" "error2"])]
       (is (string? error-text))
-      (is (.contains error-text "error1")))))
+      (is (str/includes? error-text "error1")))))
 
 ;; TODO: Add more comprehensive tests when functionality is implemented
 (deftest test-placeholder-functions

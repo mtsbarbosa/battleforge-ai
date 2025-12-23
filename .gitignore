@@ -1,6 +1,9 @@
 /target
 /decks/*
 notes.md
+cursor-state.md
+
+.calva
 
 # Leiningen artifacts
 .lein-failures
@@ -8,6 +11,8 @@ notes.md
 
 # clj-kondo cache
 .clj-kondo/.cache/
+
+.lsp/.cache/
 
 # macOS system files
 .DS_Store

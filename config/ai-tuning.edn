@@ -1,0 +1,122 @@
+;; ============================================================================
+;; AI Strategy Tuning Configuration
+;; ============================================================================
+;; 
+;; This file contains all the configurable parameters for the BattleForge AI.
+;; Modify these values to experiment with different AI behaviors and strategies.
+;; 
+;; Default values represent a balanced, conservative AI strategy.
+;; Higher values generally make the AI more aggressive, lower values more defensive.
+
+{;; ============================================================================
+ ;; Basic Amber Calculations
+ ;; ============================================================================
+ 
+ ;; Default amber potential for creatures without explicit expected-amber value
+ :default-creature-amber 1.0
+ 
+ ;; Estimated amber generation from opponent's hand per turn
+ :opponent-hand-amber-estimate 2.0
+ 
+ ;; Cost to forge a key (game rule - should normally be 6)
+ :key-cost 6
+
+ ;; ============================================================================
+ ;; Amber Control Heuristics 
+ ;; ============================================================================
+ ;; How much amber control potential different card types provide
+ 
+ :amber-control-action-with-pips 1.0    ; Actions with amber pips
+ :amber-control-artifact 0.5            ; Artifacts (ongoing effects)
+ :amber-control-creature-with-pips 0.5  ; Creatures with amber pips
+ :amber-control-default 0.0             ; Default (no amber control)
+
+ ;; ============================================================================
+ ;; Threat Assessment Thresholds
+ ;; ============================================================================
+ ;; Defines when opponent threat levels trigger different behaviors
+ 
+ :moderate-threat-threshold 2.0   ; Opponent delta - our delta > 2.0 = moderate threat
+ :high-threat-threshold 3.0       ; Opponent delta - our delta > 3.0 = high threat
+
+ ;; ============================================================================
+ ;; Strategic Decision Multipliers
+ ;; ============================================================================
+ 
+ ;; How much better our amber potential must be vs opponent's to avoid amber control
+ :opponent-potential-multiplier 1.5
+ 
+ ;; Required advantage multipliers for hand vs battleline potential by threat level
+ :high-threat-advantage-threshold 1.5    ; Need 1.5x advantage when under high threat  
+ :moderate-threat-advantage-threshold 1.2 ; Need 1.2x advantage when under moderate threat
+ :low-threat-advantage-threshold 1.0     ; Need 1.0x advantage when no/low threat
+
+ ;; ============================================================================
+ ;; Battleline Delta Thresholds
+ ;; ============================================================================
+ ;; When to switch houses based on low battleline delta (threat-adjusted)
+ 
+ :high-threat-delta-threshold 4.0      ; Switch if delta <= 4.0 under high threat
+ :moderate-threat-delta-threshold 3.5  ; Switch if delta <= 3.5 under moderate threat  
+ :low-threat-delta-threshold 3.0       ; Switch if delta <= 3.0 under low/no threat
+
+ ;; ============================================================================
+ ;; Card Count Requirements
+ ;; ============================================================================
+ ;; Minimum cards needed to trigger certain strategic decisions
+ 
+ :min-cards-for-hand-advantage 2   ; Min cards in hand to switch for hand advantage
+ :min-cards-for-house-switch 3     ; Min cards to switch when low delta + no battleline cards
+
+ ;; ============================================================================ 
+ ;; Battleline Advantage Requirements
+ ;; ============================================================================
+ 
+ ;; How much battleline advantage needed vs high threat to stick with current strategy
+ :battleline-advantage-vs-high-threat 2.0
+
+ ;; ============================================================================
+ ;; Fight vs Reap Decision Parameters (Delta-based)
+ ;; ============================================================================
+ ;; Uses amber generation potential (delta) to decide fight vs reap.
+ ;; Core idea: Fight if it shifts the amber generation balance in our favor.
+ 
+ ;; Minimum delta swing (our gain - our loss) needed to prefer fighting
+ ;; Higher = more conservative (only fight clearly favorable trades)
+ :fight-min-delta-swing 0.5
+ 
+ ;; If opponent amber >= this, add bonus to fight score (they're threatening to forge)
+ :fight-forge-threat-amber 4
+ 
+ ;; Bonus added to delta swing when opponent threatens to forge
+ :fight-forge-threat-bonus 1.5
+ 
+ ;; If we're this close to forging, prioritize reaping over fighting
+ :reap-amber-to-forge-threshold 3
+ 
+ ;; Minimum power ratio (our power / enemy power) to consider fighting
+ ;; Below this, we'd lose too many creatures
+ :fight-min-power-ratio 0.5}
+
+;; ============================================================================
+;; Tuning Tips:
+;; ============================================================================
+;; 
+;; Make AI more AGGRESSIVE:
+;; - Increase advantage thresholds (e.g. 1.5 -> 2.0)
+;; - Increase threat thresholds (e.g. 3.0 -> 4.0) 
+;; - Decrease card count requirements (e.g. 3 -> 2)
+;; 
+;; Make AI more DEFENSIVE:
+;; - Decrease advantage thresholds (e.g. 1.5 -> 1.2)
+;; - Decrease threat thresholds (e.g. 3.0 -> 2.5)
+;; - Increase card count requirements (e.g. 2 -> 3)
+;; 
+;; Make AI focus more on AMBER CONTROL:
+;; - Increase amber control values (e.g. 1.0 -> 1.5)
+;; - Decrease opponent-potential-multiplier (e.g. 1.5 -> 1.3)
+;; 
+;; Make AI focus more on BATTLELINE:
+;; - Increase battleline-advantage requirements
+;; - Increase delta thresholds
+;; - Decrease hand advantage thresholds 

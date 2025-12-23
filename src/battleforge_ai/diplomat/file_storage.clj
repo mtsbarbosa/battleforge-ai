@@ -5,15 +5,9 @@
             [schema.core :as s]
             [battleforge-ai.models.deck :as deck]
             [battleforge-ai.adapters.deck-storage :as deck-adapter]
-            [java-time :as time])
-  (:import [java.io File]))
-
-;; ============================================================================
-;; File System I/O Operations (Diplomat Layer)
-;; ============================================================================
+            [java-time.api :as time]))
 
 (defn- ensure-directory
-  "Ensure directory exists, creating if necessary"
   [dir-path]
   (let [dir (io/file dir-path)]
     (when-not (.exists dir)
@@ -61,9 +55,9 @@
   (let [dir (io/file dir-path)]
     (if (.exists dir)
       (->> (.listFiles dir)
-           (filter #(.isFile %))
-           (filter #(.endsWith (.getName %) ".json"))
-           (mapv #(.getPath %)))
+           (filter #(.isFile ^java.io.File %))
+           (filter #(.endsWith (.getName ^java.io.File %) ".json"))
+           (mapv #(.getPath ^java.io.File %)))
       [])))
 
 (defn- get-file-metadata
